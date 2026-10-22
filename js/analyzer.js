@@ -176,7 +176,7 @@
   ];
 
   function normalize(input) {
-    let text = String(input || '');
+    let text = String(input || '').replace(/^\uFEFF/, '');
     text = text.replace(/\r/g, '\n').replace(/\u3000/g, ' ').replace(/\u00a0/g, ' ');
     // 去掉 OCR 在每个汉字之间插入的空格
     for (let i = 0; i < 6; i += 1) {
@@ -296,11 +296,20 @@
   }
 
   function extractName(text) {
-    const candidates = text.split('\n').map(function (line) {
-      return line.replace(/^[●•·*\-—\s【】\[\]（）()]+/, '').replace(/[：:].*$/, '').trim();
+    const lines = text.split('\n').map(function (line) {
+      return line.replace(/^[●•·*\-—\s【】\[\]（）()]+/, '').trim();
+    }).filter(Boolean);
+    const labelled = lines.map(function (line) {
+      return line.replace(/^(?:产品名称|商品名称|品名|产品名)\s*[：:]?\s*/, '').trim();
+    }).find(function (line, index) {
+      return lines[index] !== line && line.length >= 2 && line.length <= 32 && !/(卖点|核心|价格|规格|群聊|截图)/.test(line);
+    });
+    if (labelled) return labelled;
+    const candidates = lines.map(function (line) {
+      return line.replace(/^(?:产品介绍|产品信息|商品介绍|产品卖点)\s*[：:]?\s*/, '').replace(/[：:].*$/, '').trim();
     }).filter(function (line) {
-      return line.length >= 2 && line.length <= 24 && /(馅饼|月饼|礼盒|糕|酥|饼|酱|茶|礼盒)/.test(line) &&
-        !/(卖点|核心|口味|包装|价格|转发|群聊|截图)/.test(line);
+      return line.length >= 2 && line.length <= 28 && /[\u3400-\u9fff]/.test(line) &&
+        !/(卖点|核心|口味|包装|价格|转发|群聊|截图|发货|详情|规格|配料表|产品介绍|产品信息)/.test(line);
     });
     if (candidates.length) return candidates[0];
     return '图片识别产品';
@@ -381,8 +390,8 @@
       confidence: confidence,
       score: preferred ? 99 : (best ? best.score : 0),
       alternatives: alternatives,
-      price: product ? product.price : extractPrice(text, null),
-      spec: product ? product.spec : extractSpec(text, null),
+      price: extractPrice(text, null) || (product ? product.price : ''),
+      spec: extractSpec(text, null) || (product ? product.spec : ''),
       points: product ? points : [],
       pointIds: product ? points.map(function (p) { return p.id; }) : [],
       customPoints: customPoints,

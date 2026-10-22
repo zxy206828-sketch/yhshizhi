@@ -8,11 +8,12 @@
   const STORE_CUSTOM = 'yhs.custom-products.v1';
   const STORE_PRODUCT_OVERRIDES = 'yhs.product-overrides.v1';
   const STORE_SAVED = 'yhs.saved-copies.v1';
+  const STORE_WRITER_SESSION = 'yhs.writer-session.v1';
   const MATERIAL_DB = 'yhs-materials-v1';
   const MATERIAL_STORE = 'uploads';
 
   const state = {
-    page: 'studio',
+    page: 'import',
     productId: 'meigancai',
     pointIds: [],
     sceneId: 'breakfast',
@@ -55,7 +56,7 @@
 
   const pageMeta = {
     studio: { crumb: '文案工坊', sub: '朋友圈文案' },
-    import: { crumb: '识图建档', sub: '图片识别产品' },
+    import: { crumb: '产品文案', sub: '识别并生成' },
     products: { crumb: '产品库', sub: '全部产品' },
     materials: { crumb: '素材库', sub: '图片素材' },
     saved: { crumb: '收藏夹', sub: '已收藏文案' }
@@ -277,6 +278,17 @@
     if (state.previewIndex >= state.results.length) state.previewIndex = 0;
   }
 
+  function saveWriterSession() {
+    const product = getProduct();
+    if (!product || !state.results.length) return;
+    writeStore(STORE_WRITER_SESSION, {
+      productId: product.id,
+      product: product.custom ? product : null,
+      results: state.results,
+      seed: state.seed
+    });
+  }
+
   function selectDefaultImages(product) {
     const all = state.materials;
     const productUploads = all.filter(function (m) {
@@ -334,6 +346,7 @@
     state.seed = (state.seed + 19) % 100000;
     state.previewIndex = 0;
     regenerate();
+    if (state.importState.status === 'generated') saveWriterSession();
     renderApp({ preserveScroll: true });
     toast('已换一批文案，共 ' + state.results.length + ' 条', 'spark');
   }
@@ -625,11 +638,11 @@
       sceneIds: ['daily', 'customFamily', 'customGift'],
       defaultScene: 'daily',
       voice: {
-        sensory: ['用料和细节都摆在这里，吃过就知道值不值得。', '不靠花哨的形容，先把真实的样子拍给你看。'],
-        context: ['有些好东西不一定会吆喝，但值得被认真介绍一次。', '挑来挑去，最后还是想把这一样分享出来。'],
-        trust: '所有卖点来自产品资料，按实际包装核对后再发布。',
-        sellerLines: ['这次拍的是实物，没有过度修饰。', '就是这样一件东西，喜欢的话可以试试。'],
-        shortHooks: ['最近挖到的好东西，分享给你们。', '值得记一笔的日常好物。']
+        sensory: ['口味和口感按产品资料介绍，具体感受因人而异。', '先把能确认的用料和口味说清楚，不堆夸张形容。'],
+        context: ['把规格、吃法和产品特点放在一起，挑选时更方便。', '选食品先看口味和需求，产品信息整理在这里供参考。'],
+        trust: '卖点根据你提供的资料整理，具体以产品包装标注为准。',
+        sellerLines: ['把产品信息和细节整理一下，方便大家了解。', '这款的规格、口味和吃法，按资料给大家说清楚。'],
+        shortHooks: ['整理一款产品信息，给有需要的朋友参考。', '这款的特点和规格，简单说几句。']
       },
       priceLines: {
         short: priceLine,
@@ -807,8 +820,8 @@
             '<button class="modal-close" data-close-modal aria-label="关闭">' + icon('close') + '</button>' +
           '</div>' +
           '<div class="guide-steps">' +
-            '<div class="guide-step"><div class="guide-num">01</div><div><h3>选产品，挑卖点</h3><p>从「产品库」选一款主推产品，或点「识图建档」上传产品信息图自动识别。再勾选 3–5 个你最想讲的卖点。默认已经帮你选了最适合发朋友圈的组合。</p></div></div>' +
-            '<div class="guide-step"><div class="guide-num">02</div><div><h3>定场景和语气</h3><p>早餐、家庭、送礼、办公室下午茶……场景决定开头。人设和长度决定整条文案的说话方式。</p></div></div>' +
+            '<div class="guide-step"><div class="guide-num">01</div><div><h3>选产品</h3><p>从产品库选一款主推产品，或先用「识图建档」录入产品资料。</p></div></div>' +
+            '<div class="guide-step"><div class="guide-num">02</div><div><h3>自动生成不同人群文案</h3><p>系统会根据产品资料，自动搭配卖点、场景、语气和篇幅，生成多条适合不同人群的朋友圈文案。</p></div></div>' +
             '<div class="guide-step"><div class="guide-num">03</div><div><h3>上传产品图和卖家秀</h3><p>在「素材库」上传 1–9 张图片，点击缩略图可设为首图。建议顺序：产品特写 → 使用场景 → 包装细节。</p></div></div>' +
             '<div class="guide-step"><div class="guide-num">04</div><div><h3>挑一条，复制发布</h3><p>右侧点击卡片切换手机预览。复制文案、收藏灵感，或下载全部文案。按 <strong>Ctrl / ⌘ + Enter</strong> 可以一键换一批。</p></div></div>' +
           '</div>' +
@@ -861,19 +874,14 @@
           '<div class="brand-text"><strong>壹号食志</strong><span>MOMENTS LAB</span></div>' +
         '</div>' +
         '<nav class="nav" aria-label="主导航">' +
-          navItem('studio', 'pen', '文案工坊', '01') +
-          navItem('import', 'spark', '识图建档', '02') +
-          navItem('products', 'package', '产品库', '03') +
-          navItem('materials', 'image', '素材库', '04') +
-          navItem('saved', 'bookmark', '收藏夹', '05', state.saved.length) +
+          navItem('import', 'spark', '识别并生成', '01') +
         '</nav>' +
         '<div class="sidebar-note">' +
-          '<span class="eyebrow">WRITING TIP</span>' +
-          '<p>先选 3 个卖点，<br>再定一个场景，<br>文案会更聚焦。</p>' +
-          '<button data-action="guide">查看使用说明 →</button>' +
+          '<span class="eyebrow">快速开始</span>' +
+          '<p>上传产品图或资料，<br>也可以直接粘贴文字。<br>识别后生成不同人群文案。</p>' +
         '</div>' +
         '<div class="sidebar-foot">' +
-          '<span class="status-dot"><i></i><span>本地生成 · 无需联网</span></span>' +
+          '<span class="status-dot"><i></i><span>本地处理 · 资料不上传</span></span>' +
           '<span>v1.0</span>' +
         '</div>' +
       '</aside>';
@@ -886,8 +894,7 @@
         '<div class="topbar-brand"><div class="brand-mark">壹</div><span>壹号食志</span></div>' +
         '<div class="crumb"><span>工作台</span><span class="sep">/</span><strong>' + meta.crumb + '</strong><span class="sep">/</span><span>' + meta.sub + '</span></div>' +
         '<div class="topbar-right">' +
-          '<span class="engine-pill"><i></i>本地文案引擎</span>' +
-          '<button class="icon-btn" data-action="guide" title="使用说明" aria-label="使用说明">' + icon('info') + '</button>' +
+          '<span class="engine-pill"><i></i>本地识别与生成</span>' +
           '<div class="avatar-mini" title="壹号食志">壹</div>' +
         '</div>' +
       '</header>';
@@ -922,11 +929,11 @@
           '<h1>把好食材，写成<br><em>让人想下单</em>的朋友圈。</h1>' +
         '</div>' +
         '<div class="hero-side">' +
-          '<p>选产品、挑卖点、配好图，30 秒生成 6 条可直接发布的朋友圈文案。不写套话，只把用料和场景说清楚。</p>' +
+          '<p>只需选择产品，自动匹配卖点、场景和人群，生成 6 条风格不同的朋友圈文案。按需要换一批，挑合适的发布。</p>' +
           '<button class="hero-import-btn" data-action="go-import">' + icon('spark') + '<span>上传产品信息图，自动识别卖点</span>' + icon('arrow') + '</button>' +
           '<div class="hero-stats">' +
             '<div><strong>' + state.products.length + '</strong><span>款产品</span></div>' +
-            '<div><strong>6</strong><span>种角度</span></div>' +
+            '<div><strong>6</strong><span>类场景人群</span></div>' +
             '<div><strong>0</strong><span>网络依赖</span></div>' +
           '</div>' +
         '</div>' +
@@ -940,24 +947,20 @@
 
   function controlsPanel() {
     const product = getProduct();
-    const pointCount = state.pointIds.length;
-    const scenes = getScenes(product);
     return '' +
       '<section class="panel controls" aria-label="文案配置">' +
-        '<div class="control-head"><h2>配置</h2><span>01 — 04</span></div>' +
+        '<div class="control-head"><h2>选产品</h2><span>自动生成</span></div>' +
         productStep(product) +
-        pointsStep(product, pointCount) +
-        styleStep(scenes) +
-        publishStep(product) +
         '<button class="generate-btn" data-action="shuffle">' + icon('spark') + '<span>重新生成 6 条文案</span><span class="kbd">⌘↵</span></button>' +
-        '<p class="length-hint">已生成 ' + state.results.length + ' 条 · 点击结果卡片切换预览</p>' +
+        '<p class="length-hint">已生成 ' + state.results.length + ' 条 · 自动覆盖不同场景与人群</p>' +
       '</section>';
   }
 
   function productStep(product) {
     return '' +
       '<div class="step">' +
-        '<div class="step-head"><span class="step-no">01</span><h3>选产品</h3><span class="step-hint">本次主推</span></div>' +
+        '<div class="step-head"><span class="step-no">01</span><h3>选择主推产品</h3></div>' +
+        '<p class="step-hint">卖点、语气、篇幅和适合人群都会自动搭配</p>' +
         '<div class="product-grid">' +
           state.products.map(function (p) {
             return '<button class="product-option ' + (p.id === product.id ? 'active' : '') + '" data-product-id="' + escapeHtml(p.id) + '" aria-pressed="' + (p.id === product.id) + '">' +
@@ -1116,7 +1119,7 @@
             '<button class="btn btn-sm btn-primary" data-action="shuffle">' + icon('refresh') + '换一批</button>' +
           '</div>' +
         '</div>' +
-        '<div class="results-meta"><span>点击卡片切换左侧预览</span><span class="dot"></span><span>已选 ' + state.pointIds.length + ' 个卖点</span><span class="dot"></span><span class="num">' + materials.length + ' 张配图</span></div>' +
+        '<div class="results-meta"><span>点击卡片切换左侧预览</span><span class="dot"></span><span>每条自动匹配不同场景与人群</span><span class="dot"></span><span class="num">' + materials.length + ' 张配图</span></div>' +
         '<div class="copy-list">' +
           state.results.map(function (variant, i) { return variantCard(variant, i, product, materials); }).join('') +
           '<div class="compliance-note">' + icon('info') + '<span>卖点、价格与规格来自产品资料截图。发布前请按实际包装、检测报告与当期活动再次确认；使用“扫码留货”时请替换成自己的二维码。</span></div>' +
@@ -1130,7 +1133,7 @@
       '<article class="copy-card ' + (i === state.previewIndex ? 'active' : '') + '" data-variant-index="' + i + '">' +
         '<div class="copy-head">' +
           '<span class="copy-index">' + pad(i + 1) + '</span>' +
-          '<div><div class="copy-title">' + escapeHtml(variant.title) + '</div><div class="copy-note">' + escapeHtml(variant.note) + ' · ' + escapeHtml(product.shortName) + '</div></div>' +
+          '<div><div class="copy-title">' + escapeHtml(variant.title) + '</div><div class="copy-note">适合：' + escapeHtml(variant.audienceLabel || '日常分享') + ' · ' + escapeHtml(product.shortName) + '</div></div>' +
           '<span class="copy-chars">' + variant.chars + ' 字</span>' +
         '</div>' +
         '<div class="copy-body">' + formatCopy(variant.text) + '</div>' +
@@ -1182,6 +1185,7 @@
       manualText: '',
       coverMaterialId: ''
     };
+    try { window.localStorage.removeItem(STORE_WRITER_SESSION); } catch (err) { /* 浏览器存储不可用 */ }
     renderApp({ preserveScroll: true });
   }
 
@@ -1237,8 +1241,31 @@
 
   async function handleInfoFile(file) {
     if (!file) return;
+    if (/\.(txt|md|csv|pdf|docx)$/i.test(file.name) || /^text\//i.test(file.type)) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast('产品资料文件不能超过 15MB', 'info');
+        return;
+      }
+      try {
+        const text = await readProductDocument(file);
+        if (text.replace(/\s/g, '').length < 8) throw new Error('文件里的产品资料太少，请换一个文件或直接粘贴文字');
+        state.importState = {
+          status: 'processing', stage: 'analyze', dataUrl: '', fileName: file.name,
+          ocrLines: [], rawText: '', analysis: null, selectedPointIds: [],
+          selectedSceneId: '', selectedPersonaId: '', error: '', manualOpen: true,
+          manualText: text, coverMaterialId: ''
+        };
+        renderApp({ preserveScroll: true });
+        applyImportAnalysisText(text, text.split(/\r?\n/).filter(Boolean));
+      } catch (err) {
+        state.importState.status = 'error';
+        state.importState.error = err.message || '无法读取这个资料文件';
+        renderApp({ preserveScroll: true });
+      }
+      return;
+    }
     if (!/^image\/(jpeg|png|webp)$/i.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) {
-      toast('请上传 JPG / PNG / WebP 图片', 'info');
+      toast('支持 JPG、PNG、WebP 图片，以及 TXT、MD、CSV、PDF、DOCX 文件', 'info');
       return;
     }
     if (file.size > 18 * 1024 * 1024) {
@@ -1308,6 +1335,53 @@
 
   let browserOcrWorkerPromise = null;
   let browserOcrScriptPromise = null;
+  let pdfScriptPromise = null;
+  let mammothScriptPromise = null;
+
+  function loadScriptOnce(src, cacheRef) {
+    if (cacheRef.value) return cacheRef.value;
+    cacheRef.value = new Promise(function (resolve, reject) {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = function () { cacheRef.value = null; reject(new Error('资料解析组件加载失败，请检查网络后重试')); };
+      document.head.appendChild(script);
+    });
+    return cacheRef.value;
+  }
+
+  async function readProductDocument(file) {
+    const name = String(file.name || '').toLowerCase();
+    if (/\.pdf$/.test(name)) {
+      if (!pdfScriptPromise) pdfScriptPromise = { value: null };
+      const cache = pdfScriptPromise;
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', cache);
+      if (!window.pdfjsLib) throw new Error('PDF 解析组件没有正常启动，请改用 TXT、DOCX 或粘贴文字');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+      if (pdf.numPages > 60) throw new Error('PDF 超过 60 页，请截取包含产品信息的页面再上传');
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        pages.push(content.items.map(function (item) { return item.str || ''; }).join(' '));
+      }
+      const text = pages.join('\n');
+      if (text.replace(/\s/g, '').length < 8) throw new Error('这个 PDF 可能是扫描图片，没能读出文字；请上传页面截图或粘贴资料');
+      return text;
+    }
+    if (/\.docx$/.test(name)) {
+      if (!mammothScriptPromise) mammothScriptPromise = { value: null };
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.13.0/mammoth.browser.min.js', mammothScriptPromise);
+      if (!window.mammoth) throw new Error('Word 解析组件没有正常启动，请改用 TXT、PDF 或粘贴文字');
+      const result = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+      const text = String(result.value || '').trim();
+      if (text.replace(/\s/g, '').length < 8) throw new Error('Word 文件里没有读到足够的产品文字');
+      return text;
+    }
+    return (await file.text()).trim();
+  }
 
   function prepareOcrImage(file) {
     return new Promise(function (resolve, reject) {
@@ -1453,6 +1527,7 @@
     state.importState.status = 'done';
     state.importState.stage = 'done';
     state.importState.rawText = rawText;
+    if (!state.importState.manualText) state.importState.manualText = rawText;
     state.importState.ocrLines = ocrLines || [];
     state.importState.analysis = analysis;
     state.importState.selectedPointIds = analysis.pointIds.slice();
@@ -1480,8 +1555,8 @@
 
   function analyzeManualText() {
     const text = state.importState.manualText.trim();
-    if (text.replace(/\s/g, '').length < 12) {
-      toast('至少粘贴一段产品资料', 'info');
+    if (text.replace(/\s/g, '').length < 8) {
+      toast('至少粘贴 8 个字的产品资料', 'info');
       return;
     }
     state.importState.manualOpen = false;
@@ -1492,104 +1567,87 @@
     const imp = state.importState;
     const analysis = imp.analysis;
     if (!analysis) {
-      toast('请先上传并识别产品信息图', 'info');
+      toast('请先上传图片、资料文件或粘贴文字', 'info');
       return;
     }
     if (!analysis.product && !analysis.customPoints.length) {
       state.importState.status = 'error';
-      state.importState.error = '还没有提取到可用卖点。请补充产品名称、卖点和价格，再带入文案工坊。';
+      state.importState.error = '还没有提取到可用卖点。请补充产品名称和具体特点，再生成文案。';
       state.importState.manualOpen = true;
       state.importState.manualText = state.importState.manualText || imp.rawText || '';
       renderApp({ preserveScroll: true });
       toast('请先补充至少一条产品卖点', 'info');
       return;
     }
-    const selectedPoints = imp.selectedPointIds.slice();
-    const sceneId = imp.selectedSceneId || analysis.recommendedSceneId;
-    const personaId = imp.selectedPersonaId || analysis.recommendedPersonaId;
-
     if (analysis.product) {
       state.productId = analysis.productId;
-      state.pointIds = selectedPoints.length ? selectedPoints : analysis.pointIds.slice();
-      state.sceneId = sceneId;
-      state.personaId = personaId;
-      state.previewIndex = 0;
-      state.seed += 1;
-      bindImportCover(analysis.product);
-      selectDefaultImages(analysis.product);
-      regenerate();
+      state.pointIds = analysis.pointIds.slice();
     } else {
-      const normalizedName = String(analysis.customName || '').replace(/\s/g, '').toLowerCase();
-      if (!normalizedName || normalizedName === '图片识别产品') {
-        state.importState.status = 'error';
-        state.importState.error = '还没识别到明确的产品名称。请先在左侧文字框补上真实产品名，再分析保存，避免产品库出现重复的“图片识别产品”。';
-        state.importState.manualOpen = true;
-        state.importState.manualText = state.importState.manualText || imp.rawText || '';
-        renderApp({ preserveScroll: true });
-        toast('请先补充真实产品名称', 'info');
-        return;
-      }
-      const duplicate = state.customProducts.find(function (item) {
-        return String(item.name || '').replace(/\s/g, '').toLowerCase() === normalizedName;
-      });
-      if (duplicate) {
-        state.importState.status = 'error';
-        state.importState.error = '产品库里已经有「' + duplicate.name + '」。请到产品库编辑现有档案，避免重复添加。';
-        state.importState.manualOpen = true;
-        state.importState.manualText = state.importState.manualText || imp.rawText || '';
-        renderApp({ preserveScroll: true });
-        toast('产品已存在，可直接编辑', 'info');
-        return;
-      }
       const product = buildCustomProduct(window.DYAnalyzer.buildCustomForm(analysis));
       if (!product.points.length) {
         toast('没有提取到可用卖点，请手动粘贴更完整的产品资料', 'info');
         return;
       }
+      product.id = 'session-product';
+      state.customProducts = state.customProducts.filter(function (item) { return item.id !== product.id; });
       state.customProducts.push(product);
       refreshProducts();
-      writeStore(STORE_CUSTOM, state.customProducts);
       state.productId = product.id;
       state.pointIds = product.points.slice(0, 5).map(function (p) { return p.id; });
-      state.sceneId = sceneId;
-      state.personaId = personaId;
-      state.previewIndex = 0;
-      state.seed += 1;
-      bindImportCover(product);
-      selectDefaultImages(product);
-      regenerate();
     }
-    state.page = 'studio';
+    state.previewIndex = 0;
+    state.seed += 1;
+    regenerate();
+    state.importState.status = 'generated';
+    saveWriterSession();
     renderApp();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    toast('已带入工坊，卖点、场景和语气都配好了', 'spark');
+    toast('已生成 6 条不同人群文案', 'spark');
   }
 
   function importPage() {
     const imp = state.importState;
+    if (imp.status === 'generated') return generatedCopyPage();
     return '' +
       '<div class="page-head import-head">' +
-        '<div><span class="eyebrow">SMART PRODUCT IMPORT</span><h1>识图建档</h1><p>上传产品卖点截图、详情页或海报，自动识别产品、卖点、价格，并推荐适合的场景、语气和人群。</p></div>' +
+        '<div><span class="eyebrow">PRODUCT TO MOMENTS COPY</span><h1>产品资料，一键变成朋友圈文案</h1><p>上传产品图片或文字资料，也可以直接粘贴；识别后自动整理卖点，并生成不同人群适用的文案。</p></div>' +
         '<div class="page-head-actions">' +
-          '<button class="btn" data-action="toggle-manual">' + icon('pen') + '手动粘贴文字</button>' +
-          '<button class="btn btn-primary" data-upload-info>' + icon('upload') + '上传产品信息图</button>' +
+          '<button class="btn btn-primary" data-upload-info>' + icon('upload') + '上传图片或资料文件</button>' +
         '</div>' +
       '</div>' +
       '<div class="import-layout ' + (imp.status === 'done' || imp.status === 'error' ? 'has-result' : '') + '">' +
-        '<div class="import-left">' + importUploadCard(imp) + importCoverPicker(imp) + manualPanel(imp) + '<div class="import-privacy">' + icon('info') + '<span>识别图和封面图都只在当前浏览器处理，不会上传到应用服务器。</span></div></div>' +
+        '<div class="import-left">' + importUploadCard(imp) + manualPanel(imp) + '<div class="import-privacy">' + icon('info') + '<span>图片识别和文案生成都在当前浏览器完成，资料不会上传到应用服务器。</span></div></div>' +
         '<div class="import-right">' + importResultPanel(imp) + '</div>' +
       '</div>';
   }
 
+  function generatedCopyPage() {
+    const product = getProduct();
+    return '' +
+      '<div class="page-head import-head"><div><span class="eyebrow">COPY READY</span><h1>' + escapeHtml(product.name) + '</h1><p>已自动组合产品卖点，生成适合不同人群的 6 条文案。选择喜欢的一条复制即可。</p></div><div class="page-head-actions"><button class="btn" data-action="download">' + icon('download') + '下载全部</button><button class="btn btn-primary" data-action="shuffle">' + icon('refresh') + '换一批</button><button class="btn" data-action="clear-import">重新识别产品</button></div></div>' +
+      '<div class="copy-list generated-copy-list">' +
+        state.results.map(function (variant, i) { return generatedVariantCard(variant, i); }).join('') +
+        '<div class="compliance-note">' + icon('info') + '<span>文案只使用识别到的产品信息；发布前请核对价格、规格及宣传依据。</span></div>' +
+      '</div>';
+  }
+
+  function generatedVariantCard(variant, index) {
+    return '' +
+      '<article class="copy-card generated-copy-card"><div class="copy-head"><span class="copy-index">' + pad(index + 1) + '</span><div><div class="copy-title">' + escapeHtml(variant.title) + '</div><div class="copy-note">适合：' + escapeHtml(variant.audienceLabel || '日常分享') + '</div></div><span class="copy-chars">' + variant.chars + ' 字</span></div><div class="copy-body">' + formatCopy(variant.text) + '</div><div class="copy-foot"><div class="copy-foot-info">' + icon('spark') + '人群口吻已适配</div><div class="copy-btns"><button class="copy-btn" data-copy-index="' + index + '">' + icon('copy') + '<span>复制文案</span></button></div></div></article>';
+  }
+
   function importUploadCard(imp) {
+    if (!imp.dataUrl && imp.fileName) {
+      return '<div class="info-preview-card"><div class="info-preview-head"><span>' + icon('file') + '产品资料文件</span><span class="file-name">' + escapeHtml(imp.fileName) + '</span><button class="link-btn" data-action="clear-import">移除</button></div><div class="uploaded-file-summary"><span class="drop-icon">' + icon('check') + '</span><strong>文件文字已读取</strong><p>内容在本机整理，你可以在下面文字框里修改后重新识别。</p><button class="btn btn-sm" data-upload-info>' + icon('refresh') + '更换文件</button></div></div>';
+    }
     if (!imp.dataUrl) {
       return '' +
         '<div class="import-dropzone" data-info-drop tabindex="0" role="button" aria-label="上传产品信息图">' +
           '<span class="drop-icon">' + icon('scan') + '</span>' +
-          '<h2>把产品信息图拖进来</h2>' +
-          '<p>产品卖点截图、详情页长图、海报都可以。系统会识别文字，再整理成能直接写文案的产品档案。</p>' +
-          '<button class="btn btn-accent" data-upload-info>' + icon('upload') + '选择图片</button>' +
-          '<div class="drop-meta"><span>JPG / PNG / WebP</span><i></i><span>单张 ≤ 18MB</span><i></i><span>浏览器中文 OCR</span></div>' +
+          '<h2>上传产品图片或资料文件</h2>' +
+          '<p>产品详情截图、海报、TXT、Markdown、CSV、PDF、DOCX 都可以；也可以直接粘贴文字。</p>' +
+          '<button class="btn btn-accent" data-upload-info>' + icon('upload') + '选择图片或文件</button>' +
+          '<div class="drop-meta"><span>JPG / PNG / WebP / TXT / MD / CSV / PDF / DOCX</span><i></i><span>文件 ≤ 15MB</span><i></i><span>浏览器本地识别</span></div>' +
         '</div>';
     }
     return '' +
@@ -1615,15 +1673,12 @@
   }
 
   function manualPanel(imp) {
-    if (!imp.manualOpen) {
-      return '<button class="manual-toggle" data-action="toggle-manual">' + icon('pen') + '<span>没有清晰图片？手动粘贴产品文字</span>' + icon('arrow') + '</button>';
-    }
     return '' +
       '<div class="manual-panel">' +
-        '<div class="manual-head"><strong>手动粘贴产品资料</strong><button class="link-btn" data-action="toggle-manual">收起</button></div>' +
-        '<p>把产品名称、卖点、价格、规格粘贴进来，同样会自动匹配产品、场景与人群。</p>' +
-        '<textarea data-manual-text maxlength="6000" placeholder="例如：&#10;黑猪肉梅干菜馅饼&#10;黑猪肉含量≥27%，梅干菜≥3%&#10;无需解冻，空气炸锅200℃10分钟&#10;两袋39.9起，四袋再减10元">' + escapeHtml(imp.manualText || '') + '</textarea>' +
-        '<div class="manual-actions"><button class="link-btn" data-action="fill-import-sample">填入示例文字</button><button class="btn btn-sm btn-primary" data-action="analyze-manual">分析这段文字' + icon('arrow') + '</button></div>' +
+        '<div class="manual-head"><strong>或者直接粘贴产品资料</strong></div>' +
+        '<p>产品名、配料、口感、工艺、规格、价格等都可以，系统会自动整理成易读卖点。</p>' +
+        '<textarea data-manual-text maxlength="12000" placeholder="粘贴产品介绍、卖点、规格和价格……">' + escapeHtml(imp.manualText || '') + '</textarea>' +
+        '<div class="manual-actions"><button class="btn btn-sm btn-primary" data-action="analyze-manual">识别并整理' + icon('arrow') + '</button></div>' +
       '</div>';
   }
 
@@ -1639,14 +1694,13 @@
     return '' +
       '<div class="import-empty-panel">' +
         '<span class="empty-panel-icon">' + icon('scan') + '</span>' +
-        '<span class="eyebrow">WHAT YOU GET</span>' +
-        '<h2>一张图，整理出四件事</h2>' +
-        '<p>不用再对着卖点截图手动抄。识别完成后，你只需要核对并选择。</p>' +
+        '<span class="eyebrow">简单三步</span>' +
+        '<h2>把产品资料变成可用文案</h2>' +
+        '<p>图片、资料文件或粘贴文字都可以。核对识别结果后，一键生成不同人群版本。</p>' +
         '<div class="extract-grid">' +
-          '<div><span class="extract-no">01</span><strong>产品匹配</strong><p>匹配已有产品，或者自动提取名称和价格</p></div>' +
-          '<div><span class="extract-no">02</span><strong>卖点提炼</strong><p>从文字中挑出可以写进朋友圈的卖点</p></div>' +
-          '<div><span class="extract-no">03</span><strong>场景推荐</strong><p>早餐、送礼、办公室……哪个场景更合适</p></div>' +
-          '<div><span class="extract-no">04</span><strong>人群与语气</strong><p>宝妈、上班族、送礼人群，对应不同说话方式</p></div>' +
+          '<div><span class="extract-no">01</span><strong>上传或粘贴</strong><p>图片、TXT、MD、CSV、PDF、DOCX 都支持</p></div>' +
+          '<div><span class="extract-no">02</span><strong>自动整理</strong><p>提取产品名称、价格、规格和真实卖点</p></div>' +
+          '<div><span class="extract-no">03</span><strong>生成文案</strong><p>自动匹配生活场景和不同目标人群</p></div>' +
         '</div>' +
         '<div class="import-example-note">' + icon('spark') + '<span>例：上传一张「陈皮豆沙月饼卖点」截图，会自动推荐「中秋送礼 · 送礼人群 · 克制高级」。</span></div>' +
       '</div>';
@@ -1683,20 +1737,21 @@
   }
 
   function importAnalysisPanel(analysis, imp) {
-    const selectedPoints = imp.selectedPointIds || [];
     const product = analysis.product;
+    const name = product ? product.name : analysis.customName;
+    const points = product
+      ? (analysis.pointIds || []).map(function (id) { return product.points.find(function (point) { return point.id === id; }); }).filter(Boolean).map(function (point) { return point.copy || point.short || point.label; })
+      : analysis.customPoints;
     return '' +
       '<div class="analysis-panel">' +
         '<div class="analysis-top">' +
-          '<div><span class="eyebrow">ANALYSIS READY</span><h2>' + (analysis.matched ? '已整理成产品档案' : '提取到一份产品资料') + '</h2><p>' + escapeHtml(analysis.summary) + '</p></div>' +
+          '<div><span class="eyebrow">PRODUCT INFO READY</span><h2>资料已识别并整理</h2><p>请快速核对产品名和卖点，然后一键生成不同人群的文案。</p></div>' +
           '<span class="confidence-badge ' + (analysis.confidence === '高' ? 'high' : analysis.confidence === '中' ? 'mid' : 'low') + '">' + escapeHtml(analysis.confidence) + '置信度</span>' +
         '</div>' +
-        importProductCard(analysis, product) +
-        importPointsSection(analysis, product, selectedPoints) +
-        '<section class="analysis-section"><div class="analysis-section-head"><h3>适合的发布场景</h3><span>选一个主场景</span></div><div class="reco-grid">' + analysis.scenes.map(function (scene, i) { return importSceneCard(scene, i, imp.selectedSceneId); }).join('') + '</div></section>' +
-        '<section class="analysis-section"><div class="analysis-section-head"><h3>对应的语气与人群</h3><span>选一种说话方式</span></div><div class="reco-grid persona-grid">' + analysis.personas.map(function (persona, i) { return importPersonaCard(persona, i, imp.selectedPersonaId); }).join('') + '</div></section>' +
-        '<section class="audience-strip"><div><span class="eyebrow">BEST AUDIENCE</span><strong>这组内容更适合发给</strong></div><div class="audience-tags">' + analysis.audience.map(function (a) { return '<span>' + escapeHtml(a) + '</span>'; }).join('') + '</div></section>' +
-        '<div class="import-actions"><div class="import-actions-note">' + icon('spark') + '<span>带入后仍可在工坊里调整卖点和图片。</span></div><button class="btn btn-accent" data-action="apply-import">' + (analysis.matched ? '带入文案工坊' : '保存为自定义产品并写文案') + icon('arrow') + '</button></div>' +
+        '<div class="analysis-product-card"><div class="analysis-product-media"><img src="' + escapeHtml(product ? getProductImage(product) : D.placeholderImage) + '" alt=""><span>' + (product ? '已识别' : '新产品') + '</span></div><div class="analysis-product-body"><span class="eyebrow">PRODUCT</span><h3>' + escapeHtml(name || '识别到的产品') + '</h3><div class="analysis-product-meta"><strong>' + escapeHtml(analysis.price || '未识别到价格') + '</strong><span>' + escapeHtml(analysis.spec || '未识别到规格') + '</span></div></div></div>' +
+        '<section class="analysis-section"><div class="analysis-section-head"><h3>整理出的卖点</h3><span>已筛选可用于文案的信息</span></div><div class="custom-point-list">' + (points.length ? points.map(function (point) { return '<div>' + icon('check') + '<span>' + escapeHtml(point) + '</span></div>'; }).join('') : '<p class="muted">暂时没有提取到明确卖点。请在左侧补充产品名称和具体特点。</p>') + '</div></section>' +
+        '<section class="audience-strip"><div><span class="eyebrow">自动匹配</span><strong>文案将覆盖这些人群</strong></div><div class="audience-tags">' + analysis.audience.slice(0, 6).map(function (a) { return '<span>' + escapeHtml(a) + '</span>'; }).join('') + '</div></section>' +
+        '<div class="import-actions"><div class="import-actions-note">' + icon('spark') + '<span>自动组合卖点、生活场景和人群口吻，共生成 6 条。</span></div><button class="btn btn-accent" data-action="apply-import">生成不同人群文案' + icon('arrow') + '</button></div>' +
         (imp.rawText ? '<details class="raw-ocr"><summary>查看 OCR 识别原文 <span>' + imp.rawText.replace(/\s/g, '').length + ' 字</span></summary><pre>' + escapeHtml(imp.rawText) + '</pre></details>' : '') +
       '</div>';
   }
@@ -1918,7 +1973,7 @@
     if (!infoInput) {
       infoInput = document.createElement('input');
       infoInput.type = 'file';
-      infoInput.accept = 'image/jpeg,image/png,image/webp,image/*';
+      infoInput.accept = 'image/jpeg,image/png,image/webp,.txt,.md,.csv,.pdf,.docx,text/plain,text/markdown,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       infoInput.style.display = 'none';
       infoInput.addEventListener('change', function () {
         if (infoInput.files && infoInput.files[0]) handleInfoFile(infoInput.files[0]);
@@ -1967,11 +2022,7 @@
     if (action === 'download') { downloadAll(); return; }
     if (action === 'clear-saved') { clearSaved(); return; }
     if (action === 'close-modal') { closeModal(); return; }
-    if (action === 'toggle-manual') {
-      state.importState.manualOpen = !state.importState.manualOpen;
-      renderApp({ preserveScroll: true });
-      return;
-    }
+    if (action === 'toggle-manual') { state.importState.manualOpen = true; renderApp({ preserveScroll: true }); return; }
     if (action === 'clear-import') { resetImport(); return; }
     if (action === 'clear-import-cover') {
       discardPendingImportCover();
@@ -2270,16 +2321,28 @@
     const custom = readStore(STORE_CUSTOM, []);
     const saved = readStore(STORE_SAVED, []);
     const overrides = readStore(STORE_PRODUCT_OVERRIDES, {});
+    const writerSession = readStore(STORE_WRITER_SESSION, null);
     state.customProducts = Array.isArray(custom) ? custom.filter(function (p) { return p && p.custom && p.id && p.name; }) : [];
     state.saved = Array.isArray(saved) ? saved.filter(function (s) { return s && s.id && s.text; }) : [];
     state.productOverrides = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
+    if (writerSession && writerSession.product && writerSession.product.id === 'session-product') {
+      state.customProducts = state.customProducts.filter(function (product) { return product.id !== 'session-product'; });
+      state.customProducts.push(writerSession.product);
+    }
     refreshProducts();
     let uploads = [];
     try { uploads = await loadUploadedMaterials(); } catch (err) { /* IndexedDB 不可用时仍可使用内置素材 */ }
     state.materials = D.samples.map(function (s) { return Object.assign({}, s); }).concat(uploads);
     ensureFileInputs();
-    applyProduct(state.products[0].id);
-    state.page = 'studio';
+    if (writerSession && Array.isArray(writerSession.results) && writerSession.results.length && getProduct(writerSession.productId)) {
+      state.productId = writerSession.productId;
+      state.seed = Number(writerSession.seed) || state.seed;
+      state.results = writerSession.results;
+      state.importState.status = 'generated';
+    } else {
+      applyProduct(state.products[0].id);
+    }
+    state.page = 'import';
     renderApp();
   }
 

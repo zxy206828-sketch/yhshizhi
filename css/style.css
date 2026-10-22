@@ -1222,6 +1222,7 @@ em { font-style: normal; }
 }
 .copy-card.active .copy-body { display: block; }
 .copy-card .copy-body .tag { color: var(--wechat-blue); }
+.generated-copy-card .copy-body { display: block; -webkit-line-clamp: unset; overflow: visible; }
 .copy-foot {
   display: flex;
   align-items: center;
@@ -1399,6 +1400,10 @@ em { font-style: normal; }
   line-height: 1.7;
 }
 .manual-panel textarea:focus { border-color: #c4956d; box-shadow: 0 0 0 3px rgba(184, 92, 52, .07); }
+.uploaded-file-summary { display: flex; min-height: 170px; flex-direction: column; align-items: center; justify-content: center; padding: 22px; text-align: center; }
+.uploaded-file-summary .drop-icon { width: 42px; height: 42px; margin-bottom: 10px; }
+.uploaded-file-summary strong { color: var(--ink); font-size: 12px; }
+.uploaded-file-summary p { max-width: 280px; margin: 5px 0 12px; color: var(--muted); font-size: 10px; line-height: 1.6; }
 .manual-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
 .import-cover-picker {
   display: flex;

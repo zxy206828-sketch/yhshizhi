@@ -144,6 +144,89 @@
     { id: 'story', title: '走心日常', note: '像真实生活记录', build: angleStory }
   ];
 
+  const sceneAudienceLabels = {
+    breakfast: '早餐赶时间的人',
+    afterwork: '下班想省事的人',
+    family: '家庭早餐人群',
+    stock: '习惯家中囤货的人',
+    friends: '朋友聚会分享',
+    craving: '夜间加餐人群',
+    midautumn: '中秋送礼人群',
+    office: '办公室下午茶人群',
+    familyMoon: '家人分享人群',
+    gift: '走亲访友送礼人群',
+    teatime: '日常茶点人群',
+    daily: '日常分享人群',
+    customFamily: '家庭分享人群',
+    customGift: '送礼人群'
+  };
+
+  const scenePersonas = {
+    breakfast: ['mom', 'owner'],
+    afterwork: ['owner', 'foodie'],
+    family: ['mom', 'owner'],
+    stock: ['owner', 'minimal'],
+    friends: ['funny', 'owner'],
+    craving: ['foodie', 'funny'],
+    midautumn: ['owner', 'minimal'],
+    office: ['minimal', 'owner'],
+    familyMoon: ['mom', 'minimal'],
+    gift: ['minimal', 'owner'],
+    teatime: ['minimal', 'foodie'],
+    daily: ['owner', 'foodie'],
+    customFamily: ['mom', 'owner'],
+    customGift: ['minimal', 'owner']
+  };
+
+  const personaAudienceLabels = {
+    owner: '老客与关注产品信息的人',
+    mom: '宝妈与有孩家庭',
+    foodie: '爱尝鲜、看重口味的人',
+    minimal: '注重品质与送礼的人',
+    funny: '年轻朋友与轻松分享人群'
+  };
+
+  function seededShuffle(items, seed) {
+    const list = items.slice();
+    let value = (Math.abs(Number(seed) || 0) + 0x6d2b79f5) >>> 0;
+    for (let i = list.length - 1; i > 0; i -= 1) {
+      value = (value + 0x6d2b79f5) >>> 0;
+      let t = value;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      const j = (t ^ (t >>> 14)) >>> 0;
+      const k = j % (i + 1);
+      const temp = list[i];
+      list[i] = list[k];
+      list[k] = temp;
+    }
+    return list;
+  }
+
+  function makeAutomaticOptions(product, options, seed, index, sceneIds) {
+    const sceneId = sceneIds[index % sceneIds.length];
+    const sceneOccurrence = Math.floor(index / sceneIds.length);
+    const personas = scenePersonas[sceneId] || ['owner', 'minimal', 'foodie'];
+    const candidates = (product.points || []).filter(function (point) {
+      const searchable = String(point.id || '') + ' ' + String(point.label || '');
+      return !/price|价格|售价|优惠|活动/.test(searchable);
+    });
+    const pool = candidates.length ? candidates : (product.points || []);
+    const length = ['standard', 'short', 'long'][index % 3];
+    const desiredPointCount = length === 'short' ? 1 : length === 'long' ? 3 : 2;
+    const selectedPoints = seededShuffle(pool, seed + index * 29).slice(0, desiredPointCount);
+    return Object.assign({}, options, {
+      sceneId: sceneId,
+      personaId: personas[sceneOccurrence % personas.length],
+      length: length,
+      pointIds: selectedPoints.map(function (point) { return point.id; }),
+      ctaId: index % 3 === 1 ? 'silent' : 'dm',
+      seed: seed + index * 7,
+      emoji: index % 4 !== 2,
+      hashtags: index % 3 === 0
+    });
+  }
+
   function buildContext(product, options, seed) {
     const length = D.lengths.find(function (l) { return l.id === options.length; }) || D.lengths[1];
     const cfg = Object.assign({}, lengthConfig[length.id] || lengthConfig.standard);
@@ -266,16 +349,28 @@
   function generate(product, options) {
     if (!product) return [];
     const seed = Math.abs(parseInt(options.seed, 10) || 0);
+    const availableSceneIds = (product.sceneIds || []).filter(function (id) {
+      return product.custom ? Boolean(D.customScenes[id]) : Boolean(D.sceneLibrary[id]);
+    });
+    if (!availableSceneIds.length) availableSceneIds.push(product.custom ? 'daily' : (product.defaultScene || 'breakfast'));
+    const sceneIds = seededShuffle(availableSceneIds, seed);
     const results = angles.map(function (angle, index) {
       const localSeed = seed + index * 7;
-      const ctx = buildContext(product, options, localSeed);
+      const variantOptions = makeAutomaticOptions(product, options, seed, index, sceneIds);
+      const ctx = buildContext(product, variantOptions, localSeed);
       const lines = angle.build(ctx);
       const text = finishVariant(lines, ctx, index);
+      const scene = product.custom ? D.customScenes[variantOptions.sceneId] : D.sceneLibrary[variantOptions.sceneId];
       return {
         id: angle.id + '-' + (seed + index),
         angle: angle.id,
         title: angle.title,
         note: angle.note,
+        sceneId: variantOptions.sceneId,
+        audienceLabel: [
+          sceneAudienceLabels[variantOptions.sceneId] || (scene && scene.label) || '日常分享人群',
+          personaAudienceLabels[variantOptions.personaId]
+        ].filter(Boolean).join(' · '),
         text: text,
         chars: charCount(text),
         angleIndex: index
