@@ -230,18 +230,17 @@
     const matched = scored.filter(function (item) { return item.score > 0; })
       .sort(function (a, b) { return b.score - a.score; });
     const selected = [];
-    // 产品资料里的核心卖点优先，OCR 漏字时也不会丢主卖点。
-    (product.defaultPoints || []).forEach(function (id) {
-      const point = product.points.find(function (p) { return p.id === id; });
-      if (point && selected.indexOf(point) === -1) selected.push(point);
-    });
     matched.forEach(function (item) {
-      if (selected.length < 5 && selected.indexOf(item.point) === -1) selected.push(item.point);
+      if (selected.indexOf(item.point) === -1) selected.push(item.point);
     });
-    scored.forEach(function (item) {
-      if (selected.length < 5 && item.score > 0 && selected.indexOf(item.point) === -1) selected.push(item.point);
-    });
-    return selected.slice(0, 3);
+    // 只有资料里没找到任何明确卖点时，才用内置核心卖点兜底。
+    if (!selected.length) {
+      (product.defaultPoints || []).forEach(function (id) {
+        const point = product.points.find(function (p) { return p.id === id; });
+        if (point && selected.indexOf(point) === -1) selected.push(point);
+      });
+    }
+    return selected;
   }
 
   function recommendScenes(product, text) {
@@ -337,7 +336,7 @@
       const latin = (s.match(/[A-Za-z]/g) || []).length;
       const noise = (s.match(/[^\u3400-\u9fff0-9\s，。！？、：:（）()《》【】\-]/g) || []).length;
       const covered = (s.match(meaningfulTerms) || []).reduce(function (total, term) { return total + term.length; }, 0);
-      return s.length >= 5 && s.length <= 48 && chinese >= 5 && latin === 0 && noise <= 1 && noise / Math.max(1, chinese + noise) <= 0.08 && covered / chinese >= 0.34 && !banned.test(s) && feature.test(s);
+      return s.length >= 5 && chinese >= 5 && latin === 0 && noise <= 1 && noise / Math.max(1, chinese + noise) <= 0.08 && covered / chinese >= 0.34 && !banned.test(s) && feature.test(s);
     });
     raw.sort(function (a, b) {
       const score = function (value) {
@@ -348,22 +347,13 @@
       return score(b) - score(a);
     });
     const unique = [];
-    const kinds = {};
     raw.forEach(function (line) {
-      if (unique.length >= 3) return;
-      const kind = /(手工|工序|鲜制|现烤|现做)/.test(line) ? 'craft'
-        : /(扁桃仁|杏仁|核桃|腰果|芝麻|花生|红豆|豆沙|梅干菜|陈皮|芝士|奶酪)/.test(line) ? 'ingredient'
-          : /(萨其马|沙琪玛|酥|脆|软糯|口感|香|清甜)/.test(line) ? 'taste'
-            : /(空气炸锅|烤箱|分钟|无需解冻|独立包装)/.test(line) ? 'use' : 'other';
       const normalized = line.replace(/[^\u3400-\u9fff0-9]/g, '');
       const duplicate = unique.some(function (saved) {
         const existing = saved.replace(/[^\u3400-\u9fff0-9]/g, '');
-        return existing.indexOf(normalized) !== -1 || normalized.indexOf(existing) !== -1;
+        return existing === normalized || existing.indexOf(normalized) !== -1 || normalized.indexOf(existing) !== -1;
       });
-      if (!kinds[kind] && !duplicate) {
-        kinds[kind] = true;
-        unique.push(line);
-      }
+      if (!duplicate) unique.push(line);
     });
     return unique.map(polishCustomPoint);
   }

@@ -606,7 +606,7 @@
     const headline = String(form.headline || '').trim();
     const price = String(form.price || '').trim();
     const spec = String(form.spec || '').trim();
-    const rawPoints = String(form.points || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
+    const rawPoints = String(form.points || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
     const points = rawPoints.map(function (text, i) {
       const clean = text.replace(/[。；;]+$/, '');
       return {
@@ -634,7 +634,7 @@
       soft: '#ede3d4',
       emojis: ['✨', '🤍', '🫶'],
       points: points,
-      defaultPoints: points.slice(0, 3).map(function (p) { return p.id; }),
+      defaultPoints: points.map(function (p) { return p.id; }),
       sceneIds: ['daily', 'customFamily', 'customGift'],
       defaultScene: 'daily',
       voice: {
@@ -1587,7 +1587,7 @@
     }
     if (analysis.product) {
       state.productId = analysis.productId;
-      state.pointIds = analysis.pointIds.slice();
+      state.pointIds = (imp.selectedPointIds || analysis.pointIds).slice();
     } else {
       const product = buildCustomProduct(window.DYAnalyzer.buildCustomForm(analysis));
       if (!product.points.length) {
@@ -1599,7 +1599,7 @@
       state.customProducts.push(product);
       refreshProducts();
       state.productId = product.id;
-      state.pointIds = product.points.slice(0, 5).map(function (p) { return p.id; });
+      state.pointIds = product.points.map(function (p) { return p.id; });
     }
     state.previewIndex = 0;
     state.seed += 1;
@@ -1751,7 +1751,7 @@
     return '' +
       '<div class="analysis-panel">' +
         '<div class="analysis-top">' +
-          '<div><span class="eyebrow">PRODUCT INFO READY</span><h2>资料已识别并整理</h2><p>' + (analysis.customName === '待确认产品' ? '产品名没有可靠识别出来，请在左侧文字框补上产品名，再重新整理。' : '已筛掉疑似乱码和重复内容，只保留最多 3 条清晰卖点。核对后即可生成不同人群的文案。') + '</p></div>' +
+          '<div><span class="eyebrow">PRODUCT INFO READY</span><h2>资料已识别并整理</h2><p>' + (analysis.customName === '待确认产品' ? '产品名没有可靠识别出来，请在左侧文字框补上产品名，再重新整理。' : '从你上传的资料中整理出 ' + points.length + ' 条独立卖点，已合并重复项并过滤疑似乱码。核对后即可生成不同人群的文案。') + '</p></div>' +
           '<span class="confidence-badge ' + (analysis.confidence === '高' ? 'high' : analysis.confidence === '中' ? 'mid' : 'low') + '">' + escapeHtml(analysis.confidence) + '置信度</span>' +
         '</div>' +
         '<div class="analysis-product-card"><div class="analysis-product-media"><img src="' + escapeHtml(product ? getProductImage(product) : D.placeholderImage) + '" alt=""><span>' + (product ? '已识别' : '新产品') + '</span></div><div class="analysis-product-body"><span class="eyebrow">PRODUCT</span><h3>' + escapeHtml(name || '识别到的产品') + '</h3><div class="analysis-product-meta"><strong>' + escapeHtml(analysis.price || '未识别到价格') + '</strong><span>' + escapeHtml(analysis.spec || '未识别到规格') + '</span></div></div></div>' +
@@ -1787,12 +1787,11 @@
     }
     return '' +
       '<section class="analysis-section">' +
-        '<div class="analysis-section-head"><h3>提炼到的卖点</h3><span>已选 ' + selectedPoints.length + ' / 5，点击调整</span></div>' +
+        '<div class="analysis-section-head"><h3>提炼到的卖点</h3><span>已识别 ' + product.points.length + ' 条，点击可排除不需要的内容</span></div>' +
         '<div class="import-point-grid">' +
           product.points.map(function (point) {
             const active = selectedPoints.indexOf(point.id) !== -1;
-            const disabled = !active && selectedPoints.length >= 5;
-            return '<button class="import-point ' + (active ? 'active' : '') + '" data-import-point="' + escapeHtml(point.id) + '"' + (disabled ? ' disabled' : '') + '><span class="point-check">' + icon('check') + '</span><span><strong>' + escapeHtml(point.label) + '</strong><small>' + escapeHtml(point.short) + '</small></span></button>';
+            return '<button class="import-point ' + (active ? 'active' : '') + '" data-import-point="' + escapeHtml(point.id) + '"><span class="point-check">' + icon('check') + '</span><span><strong>' + escapeHtml(point.label) + '</strong><small>' + escapeHtml(point.short) + '</small></span></button>';
           }).join('') +
         '</div>' +
       '</section>';
@@ -2086,7 +2085,6 @@
         if (list.length <= 1) { toast('至少保留 1 个卖点', 'info'); return; }
         state.importState.selectedPointIds = list.filter(function (x) { return x !== id; });
       } else {
-        if (list.length >= 5) { toast('最多选择 5 个卖点', 'info'); return; }
         state.importState.selectedPointIds = list.concat(id);
       }
       renderApp({ preserveScroll: true });
