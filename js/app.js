@@ -6,6 +6,7 @@
   const G = window.DYGenerator;
 
   const STORE_CUSTOM = 'yhs.custom-products.v1';
+  const STORE_PRODUCT_OVERRIDES = 'yhs.product-overrides.v1';
   const STORE_SAVED = 'yhs.saved-copies.v1';
 
   const state = {
@@ -31,6 +32,8 @@
     modal: null,
     materialTab: 'all',
     products: [],
+    productOverrides: {},
+    editingProductId: '',
     importState: {
       status: 'idle',
       dataUrl: '',
@@ -546,7 +549,7 @@
       return false;
     }
     state.customProducts.push(product);
-    state.products = D.products.concat(state.customProducts);
+    refreshProducts();
     writeStore(STORE_CUSTOM, state.customProducts);
     state.modal = null;
     closeModal(false);
@@ -562,12 +565,110 @@
     if (!product || !product.custom) return;
     if (!window.confirm('删除「' + product.name + '」？已收藏的文案不会受影响。')) return;
     state.customProducts = state.customProducts.filter(function (p) { return p.id !== id; });
-    state.products = D.products.concat(state.customProducts);
+    refreshProducts();
     writeStore(STORE_CUSTOM, state.customProducts);
     state.materials = state.materials.filter(function (m) { return m.productId !== id; });
     if (state.productId === id) applyProduct(D.products[0].id);
     renderApp({ preserveScroll: true });
     toast('自定义产品已删除', 'trash');
+  }
+
+  function editProduct(id) {
+    if (!getProduct(id)) return;
+    state.editingProductId = id;
+    openModal('product-edit');
+  }
+
+  function productEditorModal() {
+    const product = getProduct(state.editingProductId);
+    if (!product) return '';
+    const pointText = (product.points || []).map(function (point) { return point.copy || point.label; }).join('\n');
+    return '' +
+      '<div class="overlay" data-overlay>' +
+        '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="product-edit-title">' +
+          '<div class="modal-head"><div><span class="eyebrow">EDIT PRODUCT</span><h2 id="product-edit-title">编辑产品资料</h2><p>' + (product.custom ? '修改会保存在本机浏览器。' : '内置产品的修改只影响当前浏览器。') + '一行写一条卖点，最多 5 条。</p></div><button class="modal-close" data-close-modal aria-label="关闭">' + icon('close') + '</button></div>' +
+          '<form id="product-edit-form" novalidate>' +
+            '<div class="form-grid">' +
+              '<div class="form-row"><div class="form-field" data-field="name"><label for="pe-name">产品名称 <small>必填</small></label><input id="pe-name" name="name" maxlength="24" value="' + escapeHtml(product.name) + '" data-autofocus><div class="form-error">请填写产品名称</div></div><div class="form-field"><label for="pe-price">价格</label><input id="pe-price" name="price" maxlength="30" value="' + escapeHtml(product.price || '') + '"></div></div>' +
+              '<div class="form-field"><label for="pe-headline">一句话介绍</label><input id="pe-headline" name="headline" maxlength="60" value="' + escapeHtml(product.headline || '') + '"></div>' +
+              '<div class="form-row"><div class="form-field"><label for="pe-price-note">价格补充</label><input id="pe-price-note" name="priceNote" maxlength="40" value="' + escapeHtml(product.priceNote || '') + '"></div><div class="form-field"><label for="pe-spec">规格 / 包装</label><input id="pe-spec" name="spec" maxlength="60" value="' + escapeHtml(product.spec || '') + '"></div></div>' +
+              '<div class="form-field" data-field="points"><label for="pe-points">朋友圈可用卖点 <small>必填，一行一条</small></label><textarea id="pe-points" name="points" maxlength="1200">' + escapeHtml(pointText) + '</textarea><div class="form-hint">删掉 OCR 乱码和物流信息，只保留能确认的产品特点、口感、做法与规格。</div><div class="form-error">请至少保留 1 条卖点</div></div>' +
+            '</div>' +
+            '<div class="modal-actions"><button type="button" class="btn" data-close-modal>取消</button><button type="submit" class="btn btn-accent">保存产品资料' + icon('check') + '</button></div>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function pointsFromEditor(text, original) {
+    const oldPoints = original.points || [];
+    return String(text || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean).slice(0, 5).map(function (line, index) {
+      const clean = line.replace(/[。；;]+$/, '').trim();
+      const old = oldPoints[index] || {};
+      return Object.assign({}, old, {
+        id: old.id || original.id + '-point-' + index,
+        label: clean.length > 16 ? clean.slice(0, 16) + '…' : clean,
+        short: clean.length > 34 ? clean.slice(0, 34) + '…' : clean,
+        copy: /[。！？!?]$/.test(clean) ? clean : clean + '。'
+      });
+    });
+  }
+
+  function saveProductEdits(form) {
+    const original = getProduct(state.editingProductId);
+    if (!original) return;
+    const values = {
+      name: form.querySelector('[name="name"]').value.trim(),
+      headline: form.querySelector('[name="headline"]').value.trim(),
+      price: form.querySelector('[name="price"]').value.trim(),
+      priceNote: form.querySelector('[name="priceNote"]').value.trim(),
+      spec: form.querySelector('[name="spec"]').value.trim(),
+      points: pointsFromEditor(form.querySelector('[name="points"]').value, original)
+    };
+    const nameField = form.querySelector('[name="name"]').closest('.form-field');
+    const pointsField = form.querySelector('[name="points"]').closest('.form-field');
+    nameField.classList.toggle('invalid', !values.name);
+    pointsField.classList.toggle('invalid', !values.points.length);
+    if (!values.name || !values.points.length) return;
+    const updated = Object.assign({}, original, values, {
+      shortName: values.name.length > 10 ? values.name.slice(0, 10) : values.name,
+      headline: values.headline || values.points[0].short,
+      defaultPoints: values.points.slice(0, 3).map(function (point) { return point.id; })
+    });
+    if (original.custom) {
+      const index = state.customProducts.findIndex(function (product) { return product.id === original.id; });
+      if (index !== -1) state.customProducts[index] = updated;
+      writeStore(STORE_CUSTOM, state.customProducts);
+    } else {
+      state.productOverrides[original.id] = {
+        name: updated.name,
+        shortName: updated.shortName,
+        headline: updated.headline,
+        price: updated.price,
+        priceNote: updated.priceNote,
+        spec: updated.spec,
+        points: updated.points,
+        defaultPoints: updated.defaultPoints
+      };
+      writeStore(STORE_PRODUCT_OVERRIDES, state.productOverrides);
+    }
+    refreshProducts();
+    if (state.productId === updated.id) {
+      state.pointIds = state.pointIds.filter(function (id) { return updated.points.some(function (point) { return point.id === id; }); });
+      if (!state.pointIds.length) state.pointIds = updated.defaultPoints.slice();
+      regenerate();
+    }
+    closeModal(false);
+    state.editingProductId = '';
+    renderApp({ preserveScroll: true });
+    toast('产品资料已更新，文案卖点也同步刷新', 'check');
+  }
+
+  function refreshProducts() {
+    state.products = D.products.map(function (product) {
+      const override = state.productOverrides[product.id];
+      return override ? Object.assign({}, product, override) : product;
+    }).concat(state.customProducts);
   }
 
   /* ---------------- modals ---------------- */
@@ -595,7 +696,7 @@
       overlayRoot.innerHTML = '';
       return;
     }
-    overlayRoot.innerHTML = state.modal === 'guide' ? guideModal() : customModal();
+    overlayRoot.innerHTML = state.modal === 'guide' ? guideModal() : state.modal === 'product-edit' ? productEditorModal() : customModal();
   }
 
   function guideModal() {
@@ -1312,13 +1413,35 @@
       selectDefaultImages(analysis.product);
       regenerate();
     } else {
+      const normalizedName = String(analysis.customName || '').replace(/\s/g, '').toLowerCase();
+      if (!normalizedName || normalizedName === '图片识别产品') {
+        state.importState.status = 'error';
+        state.importState.error = '还没识别到明确的产品名称。请先在左侧文字框补上真实产品名，再分析保存，避免产品库出现重复的“图片识别产品”。';
+        state.importState.manualOpen = true;
+        state.importState.manualText = state.importState.manualText || imp.rawText || '';
+        renderApp({ preserveScroll: true });
+        toast('请先补充真实产品名称', 'info');
+        return;
+      }
+      const duplicate = state.customProducts.find(function (item) {
+        return String(item.name || '').replace(/\s/g, '').toLowerCase() === normalizedName;
+      });
+      if (duplicate) {
+        state.importState.status = 'error';
+        state.importState.error = '产品库里已经有「' + duplicate.name + '」。请到产品库编辑现有档案，避免重复添加。';
+        state.importState.manualOpen = true;
+        state.importState.manualText = state.importState.manualText || imp.rawText || '';
+        renderApp({ preserveScroll: true });
+        toast('产品已存在，可直接编辑', 'info');
+        return;
+      }
       const product = buildCustomProduct(window.DYAnalyzer.buildCustomForm(analysis));
       if (!product.points.length) {
         toast('没有提取到可用卖点，请手动粘贴更完整的产品资料', 'info');
         return;
       }
       state.customProducts.push(product);
-      state.products = D.products.concat(state.customProducts);
+      refreshProducts();
       writeStore(STORE_CUSTOM, state.customProducts);
       state.productId = product.id;
       state.pointIds = product.points.slice(0, 5).map(function (p) { return p.id; });
@@ -1534,7 +1657,7 @@
   function productsPage() {
     return '' +
       '<div class="page-head">' +
-        '<div><span class="eyebrow">PRODUCT LIBRARY</span><h1>产品库</h1><p>产品资料来自群聊截图整理。每款产品都预设了卖点、场景和价格文案，点一下就能带进工坊。</p></div>' +
+        '<div><span class="eyebrow">PRODUCT LIBRARY</span><h1>产品库</h1><p>可以随时编辑名称、价格、规格和卖点；识图导入的资料建议核对后再保存。</p></div>' +
         '<div class="page-head-actions"><button class="btn btn-primary" data-action="open-custom">' + icon('plus') + '添加自定义产品</button></div>' +
       '</div>' +
       '<div class="product-library">' +
@@ -1544,7 +1667,7 @@
           '<span class="library-custom-title">添加自己的产品</span><span class="library-custom-desc">名称、价格、卖点，填完就能生成</span>' +
         '</button>' +
       '</div>' +
-      '<div class="product-footnote">' + icon('info') + '自定义产品保存在本机浏览器，不会上传服务器。产品资料来自截图，发布前请按实际包装核对。</div>';
+      '<div class="product-footnote">' + icon('info') + '产品资料修改保存在本机浏览器，不会上传服务器；公共链接的每位使用者各自管理自己的产品库。</div>';
   }
 
   function productLibraryCard(product) {
@@ -1560,6 +1683,7 @@
           '<div class="library-bottom">' +
             '<div><div class="library-price"><strong>' + escapeHtml(product.price) + '</strong><small>' + escapeHtml(product.priceNote || '') + '</small></div><div class="library-spec">' + escapeHtml(product.spec || '') + '</div></div>' +
             '<div class="library-actions">' +
+              '<button class="btn btn-sm btn-ghost" data-edit-product="' + escapeHtml(product.id) + '" title="编辑产品" aria-label="编辑产品">' + icon('pen') + '编辑</button>' +
               (product.custom ? '<button class="btn btn-sm btn-ghost" data-delete-product="' + escapeHtml(product.id) + '" title="删除自定义产品" aria-label="删除">' + icon('trash') + '</button>' : '') +
               '<button class="btn btn-sm btn-primary" data-use-product="' + escapeHtml(product.id) + '">用它写文案' + icon('arrow') + '</button>' +
             '</div>' +
@@ -1829,6 +1953,9 @@
       return;
     }
 
+    const editProductBtn = target.closest('[data-edit-product]');
+    if (editProductBtn) { editProduct(editProductBtn.getAttribute('data-edit-product')); return; }
+
     const deleteProduct = target.closest('[data-delete-product]');
     if (deleteProduct) { deleteCustomProduct(deleteProduct.getAttribute('data-delete-product')); return; }
 
@@ -1975,6 +2102,11 @@
   });
 
   document.addEventListener('submit', function (event) {
+    if (event.target.id === 'product-edit-form') {
+      event.preventDefault();
+      saveProductEdits(event.target);
+      return;
+    }
     if (event.target.id !== 'custom-product-form') return;
     event.preventDefault();
     const form = event.target;
@@ -2031,9 +2163,11 @@
   function init() {
     const custom = readStore(STORE_CUSTOM, []);
     const saved = readStore(STORE_SAVED, []);
+    const overrides = readStore(STORE_PRODUCT_OVERRIDES, {});
     state.customProducts = Array.isArray(custom) ? custom.filter(function (p) { return p && p.custom && p.id && p.name; }) : [];
     state.saved = Array.isArray(saved) ? saved.filter(function (s) { return s && s.id && s.text; }) : [];
-    state.products = D.products.concat(state.customProducts);
+    state.productOverrides = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
+    refreshProducts();
     state.materials = D.samples.map(function (s) { return Object.assign({}, s); });
     ensureFileInputs();
     applyProduct(state.products[0].id);
