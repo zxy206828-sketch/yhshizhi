@@ -375,7 +375,9 @@
       audience: uniqueAudiences(scenes, personas),
       summary: product
         ? (preferred ? '已切换为手动选择的「' + product.name + '」，卖点与场景已重新匹配。' : '匹配到产品库中的「' + product.name + '」，已根据图片文字匹配 ' + points.length + ' 个卖点。')
-        : '没有匹配到产品库，已提取产品名称和可用的卖点，可保存为自定义产品。'
+        : (customPoints.length
+          ? '没有匹配到产品库，已提取 ' + customPoints.length + ' 条可用卖点，可保存为自定义产品。'
+          : '没有匹配到产品库，也没有提取到明确卖点。请核对识别原文或手动补充产品资料。')
     };
   }
 

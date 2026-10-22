@@ -991,9 +991,9 @@
       toast('图片不能超过 18MB', 'info');
       return;
     }
-    let dataUrl = '';
+    let prepared = null;
     try {
-      dataUrl = await prepareOcrImage(file);
+      prepared = await prepareOcrImage(file);
     } catch (err) {
       toast(err.message || '图片读取失败', 'info');
       return;
@@ -1001,7 +1001,7 @@
     state.importState = {
       status: 'processing',
       stage: 'ocr',
-      dataUrl: dataUrl,
+      dataUrl: prepared.preview,
       fileName: file.name,
       ocrLines: [],
       rawText: '',
@@ -1016,13 +1016,48 @@
     renderApp({ preserveScroll: true });
     try {
       const worker = await getBrowserOcrWorker();
-      const result = await worker.recognize(dataUrl);
+      const attempts = [];
+      state.importState.stage = 'ocr';
+      renderApp({ preserveScroll: true });
+      attempts.push(await worker.recognize(prepared.normal));
+      attempts.push(await worker.recognize(prepared.enhanced));
+      let result = attempts.sort(function (a, b) { return scoreOcrResult(b) - scoreOcrResult(a); })[0];
+      const bestText = String(result.data && result.data.text || '');
+      if ((Number(result.data && result.data.confidence) || 0) < 65 || bestText.replace(/\s/g, '').length < 80) {
+        state.importState.stage = 'enhance';
+        renderApp({ preserveScroll: true });
+        attempts.push(await worker.recognize(prepared.highContrast));
+        if (typeof worker.setParameters === 'function') {
+          try {
+            await worker.setParameters({ tessedit_pageseg_mode: '6' });
+            attempts.push(await worker.recognize(prepared.enhanced));
+            await worker.setParameters({ tessedit_pageseg_mode: '11' });
+            attempts.push(await worker.recognize(prepared.enhanced));
+          } catch (parameterError) {
+            // Keep the normal OCR result if the browser OCR engine rejects a retry mode.
+          } finally {
+            try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (resetError) {}
+          }
+        }
+        result = attempts.sort(function (a, b) { return scoreOcrResult(b) - scoreOcrResult(a); })[0];
+      }
       state.importState.stage = 'analyze';
       renderApp({ preserveScroll: true });
       const rawText = String(result.data && result.data.text || '').trim();
       const lines = rawText.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
       if (!rawText || rawText.replace(/\s/g, '').length < 8) {
         throw new Error('这张图里没有识别到足够的文字，换一张清晰一点的截图试试');
+      }
+      const analysis = window.DYAnalyzer.analyzeText(rawText);
+      if (!analysis.matched && !analysis.customPoints.length && analysis.customName === '图片识别产品') {
+        state.importState.status = 'error';
+        state.importState.error = '图片中的文字太小或较模糊，自动识别没有提取出产品名称和卖点。请在左侧文字框里核对并修改识别文字，或粘贴清晰的产品资料。';
+        state.importState.rawText = rawText;
+        state.importState.manualText = rawText;
+        state.importState.manualOpen = true;
+        renderApp({ preserveScroll: true });
+        toast('识别文字不完整，请核对后再生成', 'info');
+        return;
       }
       applyImportAnalysisText(rawText, lines);
     } catch (err) {
@@ -1044,8 +1079,8 @@
       const objectUrl = URL.createObjectURL(file);
       image.onload = function () {
         URL.revokeObjectURL(objectUrl);
-        const maxSide = 2400;
-        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const maxSide = 3000;
+        const scale = Math.min(2.4, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -1055,7 +1090,27 @@
           return;
         }
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/png'));
+        const preview = canvas.toDataURL('image/png');
+        const enhancedCanvas = document.createElement('canvas');
+        enhancedCanvas.width = canvas.width;
+        enhancedCanvas.height = canvas.height;
+        const enhancedContext = enhancedCanvas.getContext('2d');
+        if (!enhancedContext) {
+          reject(new Error('浏览器无法增强这张图片，请换 JPG / PNG / WebP 格式'));
+          return;
+        }
+        enhancedContext.filter = 'grayscale(1) contrast(1.45) brightness(1.04)';
+        enhancedContext.drawImage(canvas, 0, 0);
+        const enhanced = enhancedCanvas.toDataURL('image/png');
+        enhancedContext.clearRect(0, 0, enhancedCanvas.width, enhancedCanvas.height);
+        enhancedContext.filter = 'grayscale(1) contrast(1.9) brightness(1.07)';
+        enhancedContext.drawImage(canvas, 0, 0);
+        resolve({
+          preview: preview,
+          normal: preview,
+          enhanced: enhanced,
+          highContrast: enhancedCanvas.toDataURL('image/png')
+        });
       };
       image.onerror = function () {
         URL.revokeObjectURL(objectUrl);
@@ -1065,16 +1120,20 @@
     });
   }
 
+  function scoreOcrResult(result) {
+    const data = result && result.data || {};
+    const text = String(data.text || '');
+    const usefulChars = (text.match(/[\u3400-\u9fffA-Za-z0-9￥¥%]/g) || []).length;
+    const replacementChars = (text.match(/[�□]/g) || []).length;
+    return (Number(data.confidence) || 0) + Math.min(usefulChars, 160) * 0.12 - replacementChars * 8;
+  }
+
   function getBrowserOcrWorker() {
     if (!browserOcrWorkerPromise) {
       browserOcrWorkerPromise = loadBrowserOcrEngine().then(function () {
         return window.Tesseract.createWorker('chi_sim+eng', 1, {
           langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-          logger: function (message) {
-            if (message && message.status === 'recognizing text' && state.importState.status === 'processing') {
-              state.importState.stage = 'ocr';
-            }
-          }
+          logger: function () {}
         });
       }).catch(function (error) {
         browserOcrWorkerPromise = null;
@@ -1153,6 +1212,15 @@
     const analysis = imp.analysis;
     if (!analysis) {
       toast('请先上传并识别产品信息图', 'info');
+      return;
+    }
+    if (!analysis.product && !analysis.customPoints.length) {
+      state.importState.status = 'error';
+      state.importState.error = '还没有提取到可用卖点。请补充产品名称、卖点和价格，再带入文案工坊。';
+      state.importState.manualOpen = true;
+      state.importState.manualText = state.importState.manualText || imp.rawText || '';
+      renderApp({ preserveScroll: true });
+      toast('请先补充至少一条产品卖点', 'info');
       return;
     }
     const selectedPoints = imp.selectedPointIds.slice();
@@ -1273,8 +1341,8 @@
       '<div class="import-loading-panel">' +
         '<div class="loading-orbit"><span>' + icon('scan') + '</span></div>' +
         '<span class="eyebrow">READING YOUR IMAGE</span>' +
-        '<h2>' + (imp.stage === 'analyze' ? '正在匹配产品与卖点…' : '正在读取图片文字…') + '</h2>' +
-        '<p>本机 OCR 正在处理。<br>长截图需要几秒钟，请稍等。</p>' +
+        '<h2>' + (imp.stage === 'analyze' ? '正在匹配产品与卖点…' : imp.stage === 'enhance' ? '文字较模糊，正在增强图片重试…' : '正在读取图片文字…') + '</h2>' +
+        '<p>OCR 正在浏览器中处理。<br>长截图或首次加载语言包时需要多等几秒。</p>' +
         '<div class="loading-steps">' +
           '<span class="done">' + icon('check') + '图片预处理</span>' +
           '<span class="' + (imp.stage === 'analyze' ? 'done' : 'active') + '">' + icon('pen') + '文字识别</span>' +
@@ -1288,7 +1356,7 @@
       '<div class="import-error-panel">' +
         '<span class="error-icon">' + icon('info') + '</span>' +
         '<span class="eyebrow">OCR NEEDS A LITTLE HELP</span>' +
-        '<h2>这张图暂时没识别成功</h2>' +
+        '<h2>识别结果需要核对</h2>' +
         '<p>' + escapeHtml(imp.error || '图片文字不够清晰，或者浏览器 OCR 引擎未能加载。') + '</p>' +
         '<div class="error-actions">' +
           '<button class="btn btn-primary" data-upload-info>' + icon('upload') + '换一张图片</button>' +
