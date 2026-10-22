@@ -309,18 +309,38 @@
   function extractCustomPoints(text) {
     const banned = /(卖点|核心卖点|请勿|转发|群聊|聊天记录|Murmure|扫码|私信|想要的|发货地|发货|物流|快递|运费|地址|电话|客服|售后|保质期|有效期|生产日期|储存|保存|阴凉|包装方式|净含量|食品生产|执行标准|许可证|订单)/;
     const feature = /(手工|现烤|现做|低糖|无糖|无添加|不添加|添加|选用|精选|含量|口感|香|酥|脆|软|糯|馅|芝士|肉|豆沙|扁桃仁|杏仁|坚果|颗粒|独立包装|无需解冻|空气炸锅|烤箱|分钟|冷冻|冷藏|回购|天然|真材实料|层层|新鲜|醇|清甜|回味)/;
-    const raw = text.replace(/\n/g, '。').split(/[。；;!?！？]/).map(function (s) {
+    const raw = text.replace(/\n/g, '。').split(/[。；;!?！？，,、]/).map(function (s) {
       return s.replace(/^[●•·*\-—\s【】\[\]（）()]+/, '').replace(/\s+/g, '').trim();
     }).filter(function (s) {
       const chinese = (s.match(/[\u3400-\u9fff]/g) || []).length;
       const latin = (s.match(/[A-Za-z]/g) || []).length;
-      return s.length >= 6 && s.length <= 58 && chinese >= 6 && latin <= 2 && !banned.test(s) && feature.test(s);
+      return s.length >= 4 && s.length <= 58 && chinese >= 4 && latin <= 2 && !banned.test(s) && feature.test(s);
     });
     const unique = [];
     raw.forEach(function (line) {
       if (unique.indexOf(line) === -1) unique.push(line);
     });
-    return unique.slice(0, 5);
+    return unique.slice(0, 5).map(polishCustomPoint);
+  }
+
+  function polishCustomPoint(source) {
+    const text = String(source || '').replace(/[，,、；;。]+$/g, '').trim();
+    if (/(空气炸锅|烤箱|平底锅|蒸锅|微波炉|无需解冻|分钟|加热)/.test(text)) {
+      return '吃法简单：' + text + '，照着说明加热就能享用。';
+    }
+    if (/(独立包装|单片包装|小包装)/.test(text)) {
+      return '独立分装：' + text + '，取用更方便。';
+    }
+    if (/(手工|现烤|现做|制作|工艺)/.test(text)) {
+      return '制作有讲究：' + text + '。';
+    }
+    if (/(黑猪肉|猪肉|小龙虾|龙虾|虾仁|梅干菜|豆沙|陈皮|扁桃仁|杏仁|腰果|核桃|芝士|奶酪|配料|用料|含量)/.test(text)) {
+      return '用料亮点：' + text + '。';
+    }
+    if (/(酥|脆|软|糯|绵密|鲜香|清甜|醇|多汁|爆汁|香)/.test(text)) {
+      return '口感亮点：' + text + '。';
+    }
+    return '产品亮点：' + text + '。';
   }
 
   function analyzeText(rawText, options) {
@@ -376,7 +396,7 @@
       summary: product
         ? (preferred ? '已切换为手动选择的「' + product.name + '」，卖点与场景已重新匹配。' : '匹配到产品库中的「' + product.name + '」，已根据图片文字匹配 ' + points.length + ' 个卖点。')
         : (customPoints.length
-          ? '没有匹配到产品库，已提取 ' + customPoints.length + ' 条可用卖点，可保存为自定义产品。'
+          ? '没有匹配到产品库，已将识别内容整理润色为 ' + customPoints.length + ' 条卖点文案，可核对后用于生成。'
           : '没有匹配到产品库，也没有提取到明确卖点。请核对识别原文或手动补充产品资料。')
     };
   }

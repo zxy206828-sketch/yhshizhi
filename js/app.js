@@ -1493,7 +1493,7 @@
 
   function importPointsSection(analysis, product, selectedPoints) {
     if (!product) {
-      return '<section class="analysis-section"><div class="analysis-section-head"><h3>提取到的卖点</h3><span>将用于创建自定义产品</span></div><div class="custom-point-list">' + (analysis.customPoints.length ? analysis.customPoints.map(function (point) { return '<div>' + icon('check') + '<span>' + escapeHtml(point) + '</span></div>'; }).join('') : '<p class="muted">没有提取到明确卖点，建议手动补充。</p>') + '</div></section>';
+      return '<section class="analysis-section"><div class="analysis-section-head"><h3>整理润色后的卖点文案</h3><span>将用于生成，可展开下方原文核对</span></div><div class="custom-point-list">' + (analysis.customPoints.length ? analysis.customPoints.map(function (point) { return '<div>' + icon('check') + '<span>' + escapeHtml(point) + '</span></div>'; }).join('') : '<p class="muted">没有提取到可信卖点，请核对原文并手动补充。</p>') + '</div></section>';
     }
     return '' +
       '<section class="analysis-section">' +
