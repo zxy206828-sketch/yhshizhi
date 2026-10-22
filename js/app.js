@@ -1016,50 +1016,31 @@
     renderApp({ preserveScroll: true });
     try {
       const worker = await getBrowserOcrWorker();
-      const attempts = [];
-      state.importState.stage = 'ocr';
+      state.importState.stage = prepared.image.naturalHeight > 2800 ? 'segment' : 'ocr';
       renderApp({ preserveScroll: true });
-      attempts.push(await worker.recognize(prepared.normal));
-      attempts.push(await worker.recognize(prepared.enhanced));
-      let result = attempts.sort(function (a, b) { return scoreOcrResult(b) - scoreOcrResult(a); })[0];
-      const bestText = String(result.data && result.data.text || '');
-      if ((Number(result.data && result.data.confidence) || 0) < 65 || bestText.replace(/\s/g, '').length < 80) {
-        state.importState.stage = 'enhance';
+      const rawText = await recognizeImageInChunks(worker, prepared.image, function (index, total) {
+        state.importState.ocrProgress = { index: index, total: total };
         renderApp({ preserveScroll: true });
-        attempts.push(await worker.recognize(prepared.highContrast));
-        if (typeof worker.setParameters === 'function') {
-          try {
-            await worker.setParameters({ tessedit_pageseg_mode: '6' });
-            attempts.push(await worker.recognize(prepared.enhanced));
-            await worker.setParameters({ tessedit_pageseg_mode: '11' });
-            attempts.push(await worker.recognize(prepared.enhanced));
-          } catch (parameterError) {
-            // Keep the normal OCR result if the browser OCR engine rejects a retry mode.
-          } finally {
-            try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (resetError) {}
-          }
-        }
-        result = attempts.sort(function (a, b) { return scoreOcrResult(b) - scoreOcrResult(a); })[0];
-      }
+      });
       state.importState.stage = 'analyze';
       renderApp({ preserveScroll: true });
-      const rawText = String(result.data && result.data.text || '').trim();
-      const lines = rawText.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
-      if (!rawText || rawText.replace(/\s/g, '').length < 8) {
+      const recognizedText = String(rawText || '').trim();
+      if (!recognizedText || recognizedText.replace(/\s/g, '').length < 8) {
         throw new Error('这张图里没有识别到足够的文字，换一张清晰一点的截图试试');
       }
-      const analysis = window.DYAnalyzer.analyzeText(rawText);
+      const analysis = window.DYAnalyzer.analyzeText(recognizedText);
       if (!analysis.matched && !analysis.customPoints.length && analysis.customName === '图片识别产品') {
         state.importState.status = 'error';
         state.importState.error = '图片中的文字太小或较模糊，自动识别没有提取出产品名称和卖点。请在左侧文字框里核对并修改识别文字，或粘贴清晰的产品资料。';
-        state.importState.rawText = rawText;
-        state.importState.manualText = rawText;
+        state.importState.rawText = recognizedText;
+        state.importState.manualText = recognizedText;
         state.importState.manualOpen = true;
         renderApp({ preserveScroll: true });
         toast('识别文字不完整，请核对后再生成', 'info');
         return;
       }
-      applyImportAnalysisText(rawText, lines);
+      const lines = recognizedText.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+      applyImportAnalysisText(recognizedText, lines);
     } catch (err) {
       state.importState.status = 'error';
       state.importState.error = err.message || '识别失败';
@@ -1079,8 +1060,8 @@
       const objectUrl = URL.createObjectURL(file);
       image.onload = function () {
         URL.revokeObjectURL(objectUrl);
-        const maxSide = 3000;
-        const scale = Math.min(2.4, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const maxSide = 6000;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
         const canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
         canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -1090,27 +1071,7 @@
           return;
         }
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        const preview = canvas.toDataURL('image/png');
-        const enhancedCanvas = document.createElement('canvas');
-        enhancedCanvas.width = canvas.width;
-        enhancedCanvas.height = canvas.height;
-        const enhancedContext = enhancedCanvas.getContext('2d');
-        if (!enhancedContext) {
-          reject(new Error('浏览器无法增强这张图片，请换 JPG / PNG / WebP 格式'));
-          return;
-        }
-        enhancedContext.filter = 'grayscale(1) contrast(1.45) brightness(1.04)';
-        enhancedContext.drawImage(canvas, 0, 0);
-        const enhanced = enhancedCanvas.toDataURL('image/png');
-        enhancedContext.clearRect(0, 0, enhancedCanvas.width, enhancedCanvas.height);
-        enhancedContext.filter = 'grayscale(1) contrast(1.9) brightness(1.07)';
-        enhancedContext.drawImage(canvas, 0, 0);
-        resolve({
-          preview: preview,
-          normal: preview,
-          enhanced: enhanced,
-          highContrast: enhancedCanvas.toDataURL('image/png')
-        });
+        resolve({ preview: canvas.toDataURL('image/png'), image: image });
       };
       image.onerror = function () {
         URL.revokeObjectURL(objectUrl);
@@ -1118,6 +1079,71 @@
       };
       image.src = objectUrl;
     });
+  }
+
+  async function recognizeImageInChunks(worker, image, onProgress) {
+    const maxChunkHeight = 2800;
+    const overlap = 220;
+    const step = maxChunkHeight - overlap;
+    const total = Math.max(1, Math.ceil(Math.max(1, image.naturalHeight - overlap) / step));
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('浏览器无法处理这张图片，请换 JPG / PNG / WebP 格式');
+    const chunks = [];
+
+    for (let index = 0, top = 0; top < image.naturalHeight; index += 1, top += step) {
+      const height = Math.min(maxChunkHeight, image.naturalHeight - top);
+      canvas.height = height;
+      context.filter = 'grayscale(1) contrast(1.45) brightness(1.04)';
+      context.drawImage(image, 0, top, image.naturalWidth, height, 0, 0, canvas.width, height);
+      let bestResult = await worker.recognize(canvas.toDataURL('image/png'));
+      const firstText = String(bestResult.data && bestResult.data.text || '');
+      if ((Number(bestResult.data && bestResult.data.confidence) || 0) < 45 || firstText.replace(/\s/g, '').length < 18) {
+        context.clearRect(0, 0, canvas.width, height);
+        context.filter = 'grayscale(1) contrast(1.9) brightness(1.07)';
+        context.drawImage(image, 0, top, image.naturalWidth, height, 0, 0, canvas.width, height);
+        const retryImage = canvas.toDataURL('image/png');
+        if (typeof worker.setParameters === 'function') {
+          try {
+            await worker.setParameters({ tessedit_pageseg_mode: '11' });
+            const retryResult = await worker.recognize(retryImage);
+            if (scoreOcrResult(retryResult) > scoreOcrResult(bestResult)) bestResult = retryResult;
+          } catch (parameterError) {
+            // Keep the first pass if the OCR engine rejects the alternate layout mode.
+          } finally {
+            try { await worker.setParameters({ tessedit_pageseg_mode: '3' }); } catch (resetError) {}
+          }
+        } else {
+          const retryResult = await worker.recognize(retryImage);
+          if (scoreOcrResult(retryResult) > scoreOcrResult(bestResult)) bestResult = retryResult;
+        }
+      }
+      chunks.push(String(bestResult.data && bestResult.data.text || '').trim());
+      if (onProgress) onProgress(index + 1, total);
+    }
+    canvas.width = 1;
+    canvas.height = 1;
+    return mergeOcrChunkTexts(chunks);
+  }
+
+  function mergeOcrChunkTexts(chunks) {
+    const merged = [];
+    chunks.forEach(function (chunk) {
+      const lines = String(chunk || '').split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+      let overlapCount = 0;
+      const maxOverlap = Math.min(8, merged.length, lines.length);
+      for (let size = maxOverlap; size > 0; size -= 1) {
+        const existingTail = merged.slice(-size).map(function (line) { return line.replace(/\s/g, ''); });
+        const nextHead = lines.slice(0, size).map(function (line) { return line.replace(/\s/g, ''); });
+        if (existingTail.every(function (line, index) { return line === nextHead[index]; })) {
+          overlapCount = size;
+          break;
+        }
+      }
+      merged.push.apply(merged, lines.slice(overlapCount));
+    });
+    return merged.join('\n');
   }
 
   function scoreOcrResult(result) {
@@ -1292,7 +1318,7 @@
         '<div class="info-preview-head"><span>' + icon('image') + '产品信息图</span><span class="file-name">' + escapeHtml(imp.fileName || '图片') + '</span><button class="link-btn" data-action="clear-import">移除</button></div>' +
         '<div class="info-preview-body">' +
           '<img src="' + escapeHtml(imp.dataUrl) + '" alt="上传的产品信息图">' +
-          (imp.status === 'processing' ? '<div class="scan-overlay"><span class="scan-line"></span><span class="scan-label">' + (imp.stage === 'analyze' ? '匹配产品与卖点…' : '读取图片文字…') + '</span></div>' : '') +
+          (imp.status === 'processing' ? '<div class="scan-overlay"><span class="scan-line"></span><span class="scan-label">' + (imp.stage === 'analyze' ? '匹配产品与卖点…' : imp.stage === 'segment' ? '逐段读取长图文字…' : '读取图片文字…') + '</span></div>' : '') +
         '</div>' +
         '<div class="info-preview-foot"><span class="status-dot-inline ' + (imp.status === 'error' ? 'error' : '') + '"><i></i>' + (imp.status === 'processing' ? '正在识别' : imp.status === 'error' ? '识别失败' : '识别完成') + '</span><button class="btn btn-sm" data-upload-info>' + icon('refresh') + '重新上传</button></div>' +
       '</div>';
@@ -1341,8 +1367,8 @@
       '<div class="import-loading-panel">' +
         '<div class="loading-orbit"><span>' + icon('scan') + '</span></div>' +
         '<span class="eyebrow">READING YOUR IMAGE</span>' +
-        '<h2>' + (imp.stage === 'analyze' ? '正在匹配产品与卖点…' : imp.stage === 'enhance' ? '文字较模糊，正在增强图片重试…' : '正在读取图片文字…') + '</h2>' +
-        '<p>OCR 正在浏览器中处理。<br>长截图或首次加载语言包时需要多等几秒。</p>' +
+        '<h2>' + (imp.stage === 'analyze' ? '正在匹配产品与卖点…' : imp.stage === 'segment' ? '正在分段识别长图' : imp.stage === 'enhance' ? '文字较模糊，正在增强图片重试…' : '正在读取图片文字…') + '</h2>' +
+        '<p>' + (imp.stage === 'segment' && imp.ocrProgress ? '已完成第 ' + imp.ocrProgress.index + ' / ' + imp.ocrProgress.total + ' 段。OCR 在浏览器中处理，长图需要多等一会儿。' : 'OCR 正在浏览器中处理。<br>长截图或首次加载语言包时需要多等几秒。') + '</p>' +
         '<div class="loading-steps">' +
           '<span class="done">' + icon('check') + '图片预处理</span>' +
           '<span class="' + (imp.stage === 'analyze' ? 'done' : 'active') + '">' + icon('pen') + '文字识别</span>' +
