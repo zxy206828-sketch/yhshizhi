@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="陈皮豆沙月饼礼盒卖家秀示意图">
+  <defs>
+    <radialGradient id="sm-bg" cx="48%" cy="38%" r="82%">
+      <stop offset="0" stop-color="#4d4436"/>
+      <stop offset=".52" stop-color="#2a241d"/>
+      <stop offset="1" stop-color="#0f0d0b"/>
+    </radialGradient>
+    <linearGradient id="sm-table" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c4c39"/>
+      <stop offset=".5" stop-color="#3e3125"/>
+      <stop offset="1" stop-color="#241b14"/>
+    </linearGradient>
+    <linearGradient id="sm-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3dba4"/>
+      <stop offset=".4" stop-color="#c8a15b"/>
+      <stop offset=".7" stop-color="#9c7334"/>
+      <stop offset="1" stop-color="#e5c886"/>
+    </linearGradient>
+    <linearGradient id="sm-box" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e2922"/>
+      <stop offset=".5" stop-color="#16130f"/>
+      <stop offset="1" stop-color="#090806"/>
+    </linearGradient>
+    <linearGradient id="sm-cake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eec783"/>
+      <stop offset=".55" stop-color="#cd944f"/>
+      <stop offset="1" stop-color="#94561f"/>
+    </linearGradient>
+    <linearGradient id="sm-cake2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8a35a"/>
+      <stop offset="1" stop-color="#a1662a"/>
+    </linearGradient>
+    <linearGradient id="sm-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6f2a19"/>
+      <stop offset="1" stop-color="#351009"/>
+    </linearGradient>
+    <linearGradient id="sm-tea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a8662d"/>
+      <stop offset="1" stop-color="#6d3715"/>
+    </linearGradient>
+    <filter id="sm-shadow" x="-40%" y="-40%" width="180%" height="190%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="sm-soft"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="sm-noise">
+      <feTurbulence type="fractalNoise" baseFrequency=".82" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".065"/></feComponentTransfer>
+    </filter>
+    <radialGradient id="sm-light" cx="35%" cy="28%" r="66%">
+      <stop offset="0" stop-color="#ffd693" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#ffd693" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sm-vig" cx="50%" cy="46%" r="72%">
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="800" fill="url(#sm-bg)"/>
+  <rect width="800" height="800" fill="url(#sm-table)"/>
+  <rect width="800" height="800" fill="url(#sm-light)"/>
+  <g stroke="#1c140e" stroke-width="2" opacity=".35">
+    <path d="M0 196 C250 220 560 176 800 204"/>
+    <path d="M0 412 C230 436 520 388 800 416"/>
+    <path d="M0 672 C250 694 540 650 800 678"/>
+  </g>
+  <rect width="800" height="800" fill="url(#sm-vig)"/>
+
+  <!-- open gift box (lid tilted) -->
+  <g transform="translate(348 420)">
+    <ellipse cx="12" cy="208" rx="292" ry="54" fill="#000" opacity=".65" filter="url(#sm-shadow)"/>
+    <rect x="-278" y="-132" width="556" height="330" rx="24" fill="#0a0806"/>
+    <rect x="-262" y="-116" width="524" height="298" rx="16" fill="url(#sm-box)"/>
+    <rect x="-247" y="-101" width="494" height="268" rx="10" fill="#1e1913"/>
+    <rect x="-247" y="-101" width="494" height="268" rx="10" fill="none" stroke="url(#sm-gold)" stroke-width="2.2" opacity=".8"/>
+    <rect x="-236" y="-90" width="472" height="246" rx="6" fill="none" stroke="#6d552f" stroke-width="1" opacity=".7"/>
+
+    <!-- 6 mooncakes in 3x2 -->
+    <g>
+      <g transform="translate(-152 -38)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/><path d="M-26 -26 L26 26 M26 -26 L-26 26" opacity=".4"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+        <path d="M-34 -29 C-17 -47 15 -50 34 -36" fill="none" stroke="#ffe6b3" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+      </g>
+      <g transform="translate(0 -38)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/><path d="M-26 -26 L26 26 M26 -26 L-26 26" opacity=".4"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+        <path d="M-34 -29 C-17 -47 15 -50 34 -36" fill="none" stroke="#ffe6b3" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+      </g>
+      <g transform="translate(152 -38)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/><path d="M-26 -26 L26 26 M26 -26 L-26 26" opacity=".4"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+        <path d="M-34 -29 C-17 -47 15 -50 34 -36" fill="none" stroke="#ffe6b3" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+      </g>
+      <g transform="translate(-152 84)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+      </g>
+      <g transform="translate(0 84)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+      </g>
+      <g transform="translate(152 84)">
+        <circle r="58" fill="url(#sm-cake)"/><circle r="49" fill="url(#sm-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.6" opacity=".7"><circle r="38"/><path d="M0 -43 L0 43 M-43 0 L43 0"/></g>
+        <circle r="6" fill="#a56c2d" opacity=".6"/>
+      </g>
+    </g>
+    <text x="0" y="178" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="14" letter-spacing="5" fill="#c7a76b" opacity=".9">御唐府 · 鎏金岁月</text>
+  </g>
+
+  <!-- lid tilted -->
+  <g transform="translate(576 270) rotate(16)">
+    <ellipse cx="0" cy="80" rx="154" ry="30" fill="#000" opacity=".5" filter="url(#sm-soft)"/>
+    <rect x="-148" y="-52" width="296" height="124" rx="16" fill="#0d0b08"/>
+    <rect x="-138" y="-42" width="276" height="104" rx="10" fill="url(#sm-box)"/>
+    <rect x="-126" y="-30" width="252" height="80" rx="6" fill="none" stroke="url(#sm-gold)" stroke-width="2" opacity=".8"/>
+    <text x="0" y="14" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="19" letter-spacing="8" fill="#d9b877">鎏金岁月</text>
+    <g fill="none" stroke="url(#sm-gold)" stroke-width="2.5" opacity=".85">
+      <path d="M-112 -18 L-112 -26 L-104 -26"/><path d="M112 -18 L112 -26 L104 -26"/>
+      <path d="M-112 34 L-112 42 L-104 42"/><path d="M112 34 L112 42 L104 42"/>
+    </g>
+  </g>
+
+  <!-- cut mooncake on plate -->
+  <g transform="translate(120 600)">
+    <ellipse cx="0" cy="8" rx="94" ry="78" fill="#000" opacity=".5" filter="url(#sm-soft)"/>
+    <circle r="94" fill="#1d1913" stroke="#b08a50" stroke-width="2.5"/>
+    <circle r="79" fill="none" stroke="#7e6138" stroke-width="1.5" opacity=".8"/>
+    <g transform="translate(-10 -4) rotate(-12)">
+      <circle r="62" fill="url(#sm-cake)"/>
+      <circle r="53" fill="url(#sm-cake2)"/>
+      <path d="M-59 -9 A59 59 0 0 1 59 -9 L49 16 C43 44 20 59 -4 59 C-30 59 -51 40 -55 15 Z" fill="#c78d48"/>
+      <path d="M-48 -8 A48 48 0 0 1 48 -8 L40 13 C35 35 16 47 -4 47 C-25 47 -41 32 -44 13 Z" fill="url(#sm-fill)"/>
+      <g fill="none" stroke="#792b19" stroke-width="2" opacity=".6"><path d="M-30 10 C-15 4 -3 15 12 8 C23 3 28 11 34 6"/><path d="M-24 26 C-10 20 4 30 17 24"/></g>
+      <g fill="#e59b3f"><path d="M-30 3 c6 -5 13 -2 13 4 c-6 4 -10 3 -13 -4Z"/><path d="M9 30 c6 -5 12 -2 12 4 c-6 3 -10 2 -12 -4Z"/></g>
+    </g>
+    <path d="M-62 -49 C-38 -72 2 -78 33 -62" fill="none" stroke="#ffe5af" stroke-width="4" stroke-linecap="round" opacity=".28"/>
+  </g>
+
+  <!-- tea -->
+  <g transform="translate(690 640)">
+    <ellipse cx="0" cy="18" rx="58" ry="20" fill="#000" opacity=".5" filter="url(#sm-soft)"/>
+    <path d="M-42 -18 L-34 34 Q0 52 34 34 L42 -18 Z" fill="#201b15" stroke="#a98448" stroke-width="2"/>
+    <ellipse cx="0" cy="-18" rx="42" ry="14" fill="#352a1c" stroke="#c9a25c" stroke-width="2"/>
+    <ellipse cx="0" cy="-18" rx="33" ry="9" fill="url(#sm-tea)"/>
+    <ellipse cx="-7" cy="-20" rx="12" ry="3.4" fill="#d59b58" opacity=".6"/>
+    <path d="M-30 -30 C-16 -44 15 -44 28 -30" fill="none" stroke="#f6e7cd" stroke-width="3" stroke-linecap="round" opacity=".18"/>
+    <path d="M42 -10 C68 -12 74 21 47 26" fill="none" stroke="#a98448" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- ribbon -->
+  <g transform="translate(640 584) rotate(-18)">
+    <path d="M0 0 C30 -38 72 -38 86 -12 C96 8 69 20 53 10 C34 -2 54 -31 73 -20" fill="none" stroke="#b99052" stroke-width="11" stroke-linecap="round"/>
+    <path d="M0 0 C-18 -24 -46 -31 -58 -16 C-67 -4 -51 6 -39 2 C-24 -4 -4 -13 8 -3" fill="none" stroke="#c9a25c" stroke-width="9" stroke-linecap="round"/>
+  </g>
+
+  <!-- autumn leaves -->
+  <g transform="translate(118 130) rotate(-22)">
+    <path d="M0 0 C42 -18 79 -7 92 18 C57 38 22 28 0 0Z" fill="#b77c3d"/>
+    <path d="M6 4 C37 -9 67 -2 86 16" fill="none" stroke="#d9a665" stroke-width="2.4" opacity=".7"/>
+    <path d="M28 2 C27 -14 37 -27 51 -32 C59 -18 53 -4 39 4Z" fill="#9d642f"/>
+    <path d="M56 12 C66 -2 80 -6 91 0 C86 12 74 19 60 18Z" fill="#c68b47"/>
+  </g>
+  <g transform="translate(708 148) rotate(32)" fill="#8c5b2e" opacity=".8">
+    <path d="M0 0 C26 -13 52 -5 61 13 C38 28 14 20 0 0Z"/>
+    <path d="M5 3 C24 -5 43 0 56 12" fill="none" stroke="#bd8a4e" stroke-width="2" opacity=".6"/>
+  </g>
+
+  <!-- gold dust -->
+  <g fill="#d7b06b" opacity=".5">
+    <circle cx="76" cy="304" r="2"/><circle cx="736" cy="354" r="1.6"/><circle cx="678" cy="86" r="1.8"/>
+    <circle cx="212" cy="722" r="1.5"/><circle cx="452" cy="740" r="2"/><circle cx="760" cy="500" r="1.4"/>
+  </g>
+
+  <rect width="800" height="800" filter="url(#sm-noise)" opacity=".6"/>
+</svg>

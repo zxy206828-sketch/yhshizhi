@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="待上传产品图占位">
+  <defs>
+    <radialGradient id="p-bg" cx="45%" cy="32%" r="76%">
+      <stop offset="0" stop-color="#f7eddd"/><stop offset=".6" stop-color="#ebdcc5"/><stop offset="1" stop-color="#d3b995"/>
+    </radialGradient>
+    <linearGradient id="p-line" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b9854d"/><stop offset="1" stop-color="#85562d"/>
+    </linearGradient>
+    <filter id="p-noise">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".05"/></feComponentTransfer>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="url(#p-bg)"/>
+  <g fill="none" stroke="url(#p-line)" stroke-width="4" stroke-linecap="round" opacity=".65">
+    <rect x="230" y="280" width="340" height="260" rx="24"/>
+    <circle cx="320" cy="365" r="28"/>
+    <path d="M246 492 L358 388 L428 448 L488 402 L554 464"/>
+  </g>
+  <text x="400" y="614" text-anchor="middle" font-family="Songti SC, STSong, 'Microsoft YaHei', serif" font-size="28" letter-spacing="6" fill="#8b6239">上传你的产品图</text>
+  <text x="400" y="652" text-anchor="middle" font-family="PingFang SC, 'Microsoft YaHei', sans-serif" font-size="16" letter-spacing="2" fill="#a78661">让朋友圈先看见它</text>
+  <g fill="#b98b57" opacity=".45">
+    <circle cx="152" cy="196" r="4"/><circle cx="652" cy="226" r="3"/><circle cx="684" cy="566" r="3.4"/><circle cx="134" cy="620" r="2.6"/>
+  </g>
+  <rect width="800" height="800" filter="url(#p-noise)" opacity=".5"/>
+</svg>

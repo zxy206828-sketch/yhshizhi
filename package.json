@@ -1,0 +1,10 @@
+{
+  "name": "yihao-shizhi-moments-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "壹号食志 · 朋友圈文案工坊：产品 + 产品图 + 卖家秀，本地生成朋友圈文案。",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}

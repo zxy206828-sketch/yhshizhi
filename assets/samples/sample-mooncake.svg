@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="陈皮豆沙月饼礼盒产品示意图">
+  <defs>
+    <radialGradient id="m-bg" cx="52%" cy="38%" r="78%">
+      <stop offset="0" stop-color="#3c3327"/>
+      <stop offset=".5" stop-color="#201b15"/>
+      <stop offset="1" stop-color="#0d0b09"/>
+    </radialGradient>
+    <linearGradient id="m-box" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#25211c"/>
+      <stop offset=".5" stop-color="#12100d"/>
+      <stop offset="1" stop-color="#080706"/>
+    </linearGradient>
+    <linearGradient id="m-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0d69a"/>
+      <stop offset=".36" stop-color="#c9a25c"/>
+      <stop offset=".65" stop-color="#9d7435"/>
+      <stop offset="1" stop-color="#e7cc8e"/>
+    </linearGradient>
+    <linearGradient id="m-cake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9bf7c"/>
+      <stop offset=".55" stop-color="#cf9450"/>
+      <stop offset="1" stop-color="#9b5c25"/>
+    </linearGradient>
+    <linearGradient id="m-cake2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9a65e"/>
+      <stop offset="1" stop-color="#a76a2d"/>
+    </linearGradient>
+    <linearGradient id="m-filling" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6e2a1a"/>
+      <stop offset=".45" stop-color="#4f180f"/>
+      <stop offset="1" stop-color="#320d08"/>
+    </linearGradient>
+    <radialGradient id="m-glow" cx="50%" cy="48%" r="52%">
+      <stop offset="0" stop-color="#ffd98e" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#ffd98e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="m-vig" cx="50%" cy="45%" r="73%">
+      <stop offset=".45" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".55"/>
+    </radialGradient>
+    <filter id="m-shadow" x="-40%" y="-40%" width="180%" height="190%"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="m-soft"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="m-blur"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="m-noise">
+      <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".06"/></feComponentTransfer>
+    </filter>
+    <clipPath id="boxClip"><rect x="118" y="234" width="564" height="400" rx="26"/></clipPath>
+  </defs>
+
+  <rect width="800" height="800" fill="url(#m-bg)"/>
+  <ellipse cx="400" cy="400" rx="390" ry="330" fill="url(#m-glow)"/>
+  <rect width="800" height="800" fill="url(#m-vig)"/>
+
+  <!-- table fabric lines -->
+  <g stroke="#8a6c42" stroke-width="1.5" opacity=".16">
+    <path d="M-20 120 C220 160 550 90 820 140"/>
+    <path d="M-20 690 C240 660 530 720 820 680"/>
+  </g>
+
+  <!-- box shadow -->
+  <ellipse cx="400" cy="662" rx="320" ry="52" fill="#000" opacity=".65" filter="url(#m-shadow)"/>
+
+  <!-- gift box -->
+  <g>
+    <rect x="102" y="218" width="596" height="432" rx="34" fill="#090807"/>
+    <rect x="118" y="234" width="564" height="400" rx="26" fill="url(#m-box)"/>
+    <rect x="132" y="248" width="536" height="372" rx="18" fill="none" stroke="url(#m-gold)" stroke-width="2.5" opacity=".85"/>
+    <rect x="142" y="258" width="516" height="352" rx="12" fill="none" stroke="#7d5e2e" stroke-width="1" opacity=".7"/>
+
+    <!-- gold corner ornaments -->
+    <g fill="none" stroke="url(#m-gold)" stroke-width="3" opacity=".9">
+      <path d="M158 300 L158 278 Q158 270 166 270 L188 270"/>
+      <path d="M642 300 L642 278 Q642 270 634 270 L612 270"/>
+      <path d="M158 568 L158 590 Q158 598 166 598 L188 598"/>
+      <path d="M642 568 L642 590 Q642 598 634 598 L612 598"/>
+    </g>
+
+    <!-- box lining -->
+    <rect x="190" y="286" width="420" height="300" rx="8" fill="#1e1913"/>
+    <rect x="190" y="286" width="420" height="300" rx="8" fill="none" stroke="#4f3e26" stroke-width="1.5"/>
+
+    <!-- mooncakes 2x2 in box -->
+    <g>
+      <!-- top-left -->
+      <g transform="translate(286 370)">
+        <ellipse cx="0" cy="14" rx="72" ry="70" fill="#060504" opacity=".55" filter="url(#m-soft)"/>
+        <circle r="68" fill="url(#m-cake)"/>
+        <circle r="58" fill="none" stroke="#a96c2f" stroke-width="2.5" opacity=".7"/>
+        <circle r="51" fill="url(#m-cake2)"/>
+        <g fill="none" stroke="#8e5622" stroke-width="3" opacity=".7">
+          <circle r="41"/>
+          <path d="M0 -47 L0 47 M-47 0 L47 0"/>
+          <path d="M-30 -30 L30 30 M30 -30 L-30 30" opacity=".45"/>
+        </g>
+        <g fill="#a46a2c" opacity=".55">
+          <circle r="7"/><circle cx="29" cy="0" r="4.4"/><circle cx="-29" cy="0" r="4.4"/>
+          <circle cx="0" cy="29" r="4.4"/><circle cx="0" cy="-29" r="4.4"/>
+          <circle cx="21" cy="21" r="3.2"/><circle cx="-21" cy="-21" r="3.2"/>
+          <circle cx="21" cy="-21" r="3.2"/><circle cx="-21" cy="21" r="3.2"/>
+        </g>
+        <path d="M-44 -34 C-24 -58 14 -64 39 -47" fill="none" stroke="#ffe4ae" stroke-width="6" stroke-linecap="round" opacity=".43"/>
+      </g>
+      <!-- top-right -->
+      <g transform="translate(514 370)">
+        <ellipse cx="0" cy="14" rx="72" ry="70" fill="#060504" opacity=".55" filter="url(#m-soft)"/>
+        <circle r="68" fill="url(#m-cake)"/>
+        <circle r="58" fill="none" stroke="#a96c2f" stroke-width="2.5" opacity=".7"/>
+        <circle r="51" fill="url(#m-cake2)"/>
+        <g fill="none" stroke="#8e5622" stroke-width="3" opacity=".7">
+          <circle r="41"/>
+          <path d="M0 -47 L0 47 M-47 0 L47 0"/>
+          <path d="M-30 -30 L30 30 M30 -30 L-30 30" opacity=".45"/>
+        </g>
+        <g fill="#a46a2c" opacity=".55">
+          <circle r="7"/><circle cx="29" cy="0" r="4.4"/><circle cx="-29" cy="0" r="4.4"/>
+          <circle cx="0" cy="29" r="4.4"/><circle cx="0" cy="-29" r="4.4"/>
+        </g>
+        <path d="M-44 -34 C-24 -58 14 -64 39 -47" fill="none" stroke="#ffe4ae" stroke-width="6" stroke-linecap="round" opacity=".4"/>
+      </g>
+      <!-- bottom-left cut -->
+      <g transform="translate(286 522)">
+        <ellipse cx="0" cy="14" rx="72" ry="70" fill="#060504" opacity=".55" filter="url(#m-soft)"/>
+        <circle r="68" fill="url(#m-cake)"/>
+        <circle r="58" fill="none" stroke="#a96c2f" stroke-width="2.5" opacity=".7"/>
+        <!-- cut face -->
+        <g transform="translate(0 -2)">
+          <path d="M-66 -8 A66 66 0 0 1 66 -8 L54 16 C49 48 22 67 -4 67 C-34 67 -58 45 -61 17 Z" fill="#c68b46"/>
+          <path d="M-55 -7 A55 55 0 0 1 55 -7 L45 15 C40 41 18 56 -3 56 C-28 56 -48 38 -51 15 Z" fill="url(#m-filling)"/>
+          <!-- red bean paste swirl -->
+          <g fill="none" stroke="#7a2a18" stroke-width="2.2" opacity=".6">
+            <path d="M-37 12 C-20 5 -6 18 11 9 C24 2 30 13 38 7"/>
+            <path d="M-30 29 C-15 23 0 34 16 27 C28 21 33 29 40 25"/>
+          </g>
+          <!-- candied orange peel -->
+          <g fill="#e59b3f">
+            <path d="M-34 6 c7 -6 14 -3 15 3 c-7 5 -12 4 -15 -3Z"/>
+            <path d="M12 32 c6 -5 13 -2 13 4 c-6 4 -11 3 -13 -4Z"/>
+            <path d="M20 2 c5 -4 11 -1 11 4 c-5 3 -9 2 -11 -4Z"/>
+          </g>
+          <g fill="#f8d59a" opacity=".75">
+            <ellipse cx="-9" cy="6" rx="4" ry="1.8"/><ellipse cx="23" cy="18" rx="3" ry="1.4"/>
+          </g>
+        </g>
+        <path d="M-44 -34 C-24 -58 14 -64 39 -47" fill="none" stroke="#ffe4ae" stroke-width="5" stroke-linecap="round" opacity=".3"/>
+      </g>
+      <!-- bottom-right mooncake -->
+      <g transform="translate(514 522)">
+        <ellipse cx="0" cy="14" rx="72" ry="70" fill="#060504" opacity=".55" filter="url(#m-soft)"/>
+        <circle r="68" fill="url(#m-cake)"/>
+        <circle r="58" fill="none" stroke="#a96c2f" stroke-width="2.5" opacity=".7"/>
+        <circle r="51" fill="url(#m-cake2)"/>
+        <g fill="none" stroke="#8e5622" stroke-width="3" opacity=".7">
+          <circle r="41"/>
+          <path d="M0 -47 L0 47 M-47 0 L47 0"/>
+          <path d="M-30 -30 L30 30 M30 -30 L-30 30" opacity=".45"/>
+        </g>
+        <g fill="#a46a2c" opacity=".55">
+          <circle r="7"/><circle cx="29" cy="0" r="4.4"/><circle cx="-29" cy="0" r="4.4"/>
+          <circle cx="0" cy="29" r="4.4"/><circle cx="0" cy="-29" r="4.4"/>
+        </g>
+        <path d="M-44 -34 C-24 -58 14 -64 39 -47" fill="none" stroke="#ffe4ae" stroke-width="6" stroke-linecap="round" opacity=".4"/>
+      </g>
+    </g>
+
+    <!-- gold logo text on box edge -->
+    <g opacity=".82">
+      <rect x="330" y="601" width="140" height="22" rx="11" fill="none" stroke="url(#m-gold)" stroke-width="1"/>
+      <text x="400" y="617" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="13" letter-spacing="4" fill="#d9b877">鎏金岁月</text>
+    </g>
+  </g>
+
+  <!-- tea cup -->
+  <g transform="translate(675 618)">
+    <ellipse cx="0" cy="18" rx="66" ry="24" fill="#000" opacity=".55" filter="url(#m-soft)"/>
+    <path d="M-48 -22 L-38 38 Q0 58 38 38 L48 -22 Z" fill="#1d1a15" stroke="#a98448" stroke-width="2"/>
+    <ellipse cx="0" cy="-22" rx="48" ry="17" fill="#2b241a" stroke="#c9a25c" stroke-width="2"/>
+    <ellipse cx="0" cy="-21" rx="39" ry="12" fill="#6f3d1c"/>
+    <ellipse cx="0" cy="-21" rx="27" ry="8" fill="#8d4d22" opacity=".8"/>
+    <path d="M-34 -34 C-18 -49 17 -49 31 -34" fill="none" stroke="#f4e3c4" stroke-width="3" stroke-linecap="round" opacity=".22" filter="url(#m-blur)"/>
+    <path d="M48 -10 C77 -12 83 25 53 30" fill="none" stroke="#a98448" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <!-- osmanthus branch -->
+  <g transform="translate(92 112) rotate(-18)">
+    <path d="M0 0 C70 10 128 52 180 118" fill="none" stroke="#6a4a2b" stroke-width="5" stroke-linecap="round"/>
+    <g fill="#c79a58">
+      <path d="M42 6 C60 -10 76 -6 80 6 C65 20 48 18 42 6Z"/>
+      <path d="M94 42 C114 28 130 36 132 48 C116 60 99 55 94 42Z"/>
+      <path d="M132 86 C151 76 166 84 168 96 C152 106 136 100 132 86Z"/>
+      <circle cx="62" cy="6" r="4"/><circle cx="75" cy="14" r="3"/>
+      <circle cx="112" cy="48" r="3.6"/><circle cx="126" cy="54" r="3"/>
+      <circle cx="150" cy="92" r="3.4"/>
+    </g>
+    <g fill="#e7bb6c" opacity=".75">
+      <circle cx="50" cy="24" r="2.6"/><circle cx="86" cy="21" r="2.4"/><circle cx="116" cy="63" r="2.4"/>
+    </g>
+  </g>
+
+  <!-- small gold speckles -->
+  <g fill="#d5af6c" opacity=".55">
+    <circle cx="76" cy="700" r="2.4"/><circle cx="728" cy="120" r="2"/><circle cx="748" cy="286" r="1.6"/>
+    <circle cx="50" cy="330" r="1.8"/><circle cx="690" cy="724" r="2.2"/><circle cx="120" cy="162" r="1.5"/>
+  </g>
+
+  <rect width="800" height="800" filter="url(#m-noise)" opacity=".6"/>
+</svg>

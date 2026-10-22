@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="办公室下午茶月饼卖家秀示意图">
+  <defs>
+    <radialGradient id="o-bg" cx="48%" cy="30%" r="82%">
+      <stop offset="0" stop-color="#ece7dc"/>
+      <stop offset=".6" stop-color="#d9d2c5"/>
+      <stop offset="1" stop-color="#b8ad9d"/>
+    </radialGradient>
+    <linearGradient id="o-desk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b99065"/>
+      <stop offset=".55" stop-color="#a47a50"/>
+      <stop offset="1" stop-color="#84603c"/>
+    </linearGradient>
+    <linearGradient id="o-box" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e2922"/>
+      <stop offset=".5" stop-color="#17130f"/>
+      <stop offset="1" stop-color="#0a0806"/>
+    </linearGradient>
+    <linearGradient id="o-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0d69a"/><stop offset=".4" stop-color="#c49a53"/><stop offset="1" stop-color="#8f682f"/>
+    </linearGradient>
+    <linearGradient id="o-cake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecc580"/><stop offset=".6" stop-color="#cb914c"/><stop offset="1" stop-color="#95571f"/>
+    </linearGradient>
+    <linearGradient id="o-cake2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d7a057"/><stop offset="1" stop-color="#9f6428"/>
+    </linearGradient>
+    <linearGradient id="o-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d2818"/><stop offset="1" stop-color="#320d07"/>
+    </linearGradient>
+    <linearGradient id="o-screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#394446"/><stop offset="1" stop-color="#1f2729"/>
+    </linearGradient>
+    <filter id="o-shadow" x="-40%" y="-40%" width="180%" height="190%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="o-soft"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="o-noise">
+      <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".06"/></feComponentTransfer>
+    </filter>
+    <radialGradient id="o-light" cx="30%" cy="17%" r="64%">
+      <stop offset="0" stop-color="#fff4dd" stop-opacity=".9"/><stop offset="1" stop-color="#fff4dd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="o-vig" cx="50%" cy="46%" r="72%">
+      <stop offset=".55" stop-color="#4b3723" stop-opacity="0"/><stop offset="1" stop-color="#4b3723" stop-opacity=".28"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="800" fill="url(#o-bg)"/>
+  <rect width="800" height="800" fill="url(#o-desk)"/>
+  <rect width="800" height="800" fill="url(#o-light)"/>
+  <g stroke="#6e4c2d" stroke-width="2" opacity=".25">
+    <path d="M0 182 C250 200 540 160 800 186"/>
+    <path d="M0 368 C260 390 520 344 800 372"/>
+    <path d="M0 560 C230 582 550 548 800 570"/>
+    <path d="M0 740 C250 760 540 724 800 748"/>
+  </g>
+  <rect width="800" height="800" fill="url(#o-vig)"/>
+
+  <!-- laptop corner -->
+  <g transform="translate(654 214) rotate(8)">
+    <rect x="-192" y="-126" width="384" height="252" rx="12" fill="#2a3032"/>
+    <rect x="-176" y="-110" width="352" height="210" rx="4" fill="url(#o-screen)"/>
+    <rect x="-164" y="-98" width="328" height="186" rx="2" fill="none" stroke="#59676a" stroke-width="1.5" opacity=".55"/>
+    <g fill="#8fa3a5" opacity=".25">
+      <rect x="-138" y="-62" width="156" height="9" rx="4"/><rect x="-138" y="-36" width="220" height="7" rx="3"/>
+      <rect x="-138" y="-16" width="186" height="7" rx="3"/><rect x="-138" y="4" width="236" height="7" rx="3"/>
+      <rect x="-138" y="24" width="112" height="7" rx="3"/>
+    </g>
+    <path d="M-212 128 L212 128 L246 154 L-246 154 Z" fill="#c3c7c4"/>
+    <rect x="-246" y="154" width="492" height="11" rx="5" fill="#9fa5a3"/>
+  </g>
+
+  <!-- notebook + pen -->
+  <g transform="translate(166 238) rotate(-12)">
+    <rect x="-108" y="-76" width="216" height="152" rx="8" fill="#f7f1e5"/>
+    <rect x="-108" y="-76" width="216" height="152" rx="8" fill="none" stroke="#d3c2aa" stroke-width="2"/>
+    <g stroke="#d9cbb8" stroke-width="2" opacity=".8">
+      <path d="M-82 -44 L70 -44"/><path d="M-82 -22 L82 -22"/><path d="M-82 0 L58 0"/><path d="M-82 22 L76 22"/><path d="M-82 44 L44 44"/>
+    </g>
+    <rect x="-108" y="-76" width="16" height="152" rx="8" fill="#b66d45"/>
+    <g transform="translate(80 -58) rotate(34)">
+      <rect x="-5" y="-82" width="10" height="160" rx="5" fill="#2c2721"/>
+      <path d="M-5 78 L0 98 L5 78 Z" fill="#b28b50"/>
+    </g>
+  </g>
+
+  <!-- gift box -->
+  <g transform="translate(370 452) rotate(-4)">
+    <ellipse cx="10" cy="176" rx="246" ry="48" fill="#3a2817" opacity=".45" filter="url(#o-shadow)"/>
+    <rect x="-232" y="-124" width="464" height="288" rx="22" fill="#0a0806"/>
+    <rect x="-216" y="-108" width="432" height="256" rx="14" fill="url(#o-box)"/>
+    <rect x="-202" y="-94" width="404" height="228" rx="8" fill="none" stroke="url(#o-gold)" stroke-width="2.2" opacity=".85"/>
+    <rect x="-192" y="-84" width="384" height="208" rx="4" fill="#1f1a14"/>
+
+    <!-- 4 mooncakes -->
+    <g>
+      <g transform="translate(-96 -40)">
+        <circle r="50" fill="url(#o-cake)"/><circle r="42" fill="url(#o-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.4" opacity=".65"><circle r="33"/><path d="M0 -38 L0 38 M-38 0 L38 0"/></g>
+        <circle r="5" fill="#a56c2d" opacity=".6"/>
+      </g>
+      <g transform="translate(96 -40)">
+        <circle r="50" fill="url(#o-cake)"/><circle r="42" fill="url(#o-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.4" opacity=".65"><circle r="33"/><path d="M0 -38 L0 38 M-38 0 L38 0"/></g>
+        <circle r="5" fill="#a56c2d" opacity=".6"/>
+      </g>
+      <g transform="translate(-96 74)">
+        <circle r="50" fill="url(#o-cake)"/><circle r="42" fill="url(#o-cake2)"/>
+        <g fill="none" stroke="#8b5522" stroke-width="2.4" opacity=".65"><circle r="33"/><path d="M0 -38 L0 38 M-38 0 L38 0"/></g>
+        <circle r="5" fill="#a56c2d" opacity=".6"/>
+      </g>
+      <!-- cut one -->
+      <g transform="translate(96 74) rotate(8)">
+        <circle r="50" fill="url(#o-cake)"/><circle r="42" fill="url(#o-cake2)"/>
+        <path d="M-47 -7 A47 47 0 0 1 47 -7 L39 13 C34 35 15 47 -3 47 C-23 47 -41 32 -44 12 Z" fill="#c68c47"/>
+        <path d="M-38 -6 A38 38 0 0 1 38 -6 L32 11 C28 28 12 38 -3 38 C-19 38 -34 26 -36 10 Z" fill="url(#o-fill)"/>
+        <g fill="none" stroke="#792b19" stroke-width="2" opacity=".55"><path d="M-24 8 C-12 2 -1 12 12 6 C21 2 25 8 30 4"/></g>
+      </g>
+    </g>
+    <text x="0" y="148" text-anchor="middle" font-family="Songti SC, STSong, serif" font-size="12" letter-spacing="4" fill="#c7a76b">鎏金岁月 · 8 枚分享装</text>
+  </g>
+
+  <!-- coffee cup -->
+  <g transform="translate(664 618)">
+    <ellipse cx="0" cy="14" rx="52" ry="18" fill="#3a2817" opacity=".4" filter="url(#o-soft)"/>
+    <path d="M-38 -42 L-32 50 Q0 67 32 50 L38 -42 Z" fill="#f3efe6" stroke="#ddd5c7" stroke-width="2"/>
+    <ellipse cx="0" cy="-42" rx="38" ry="13" fill="#faf7f1" stroke="#e2dbce" stroke-width="2"/>
+    <ellipse cx="0" cy="-41" rx="29" ry="9" fill="#7a4624"/>
+    <ellipse cx="-6" cy="-43" rx="12" ry="3.4" fill="#a76a3d" opacity=".6"/>
+    <path d="M38 -28 C62 -30 66 6 42 10" fill="none" stroke="#e0d8ca" stroke-width="8" stroke-linecap="round"/>
+    <path d="M-26 -53 C-18 -66 0 -66 8 -54" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>
+  </g>
+
+  <!-- tissue / envelope -->
+  <g transform="translate(586 368) rotate(-18)">
+    <rect x="-64" y="-44" width="128" height="88" rx="6" fill="#f2eadd"/>
+    <path d="M-64 -44 L0 2 L64 -44" fill="none" stroke="#d2c3ae" stroke-width="2"/>
+    <rect x="-64" y="-44" width="128" height="88" rx="6" fill="none" stroke="#d8c9b4" stroke-width="2"/>
+  </g>
+
+  <!-- crumbs + gold -->
+  <g fill="#b77a3d" opacity=".5">
+    <circle cx="270" cy="664" r="3"/><circle cx="326" cy="688" r="2.2"/><circle cx="560" cy="676" r="2.6"/>
+  </g>
+  <g fill="#d7b06b" opacity=".45">
+    <circle cx="104" cy="560" r="1.7"/><circle cx="720" cy="130" r="1.5"/><circle cx="276" cy="126" r="1.4"/>
+  </g>
+
+  <rect width="800" height="800" filter="url(#o-noise)" opacity=".5"/>
+</svg>
