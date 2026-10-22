@@ -1400,6 +1400,25 @@ em { font-style: normal; }
 }
 .manual-panel textarea:focus { border-color: #c4956d; box-shadow: 0 0 0 3px rgba(184, 92, 52, .07); }
 .manual-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+.import-cover-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, .78);
+}
+.import-cover-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.import-cover-copy strong { color: var(--ink); font-size: 10px; }
+.import-cover-copy span { color: var(--muted); font-size: 8px; line-height: 1.5; }
+.import-cover-picker > .btn { flex: 0 0 auto; }
+.import-cover-selected { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.import-cover-selected img { width: 38px; height: 38px; flex: 0 0 auto; border-radius: 7px; object-fit: cover; }
+.import-cover-selected > span { max-width: 120px; overflow: hidden; color: var(--accent-deep); font-size: 8px; white-space: nowrap; text-overflow: ellipsis; }
+.import-cover-selected .link-btn { flex: 0 0 auto; }
 
 .info-preview-card {
   overflow: hidden;

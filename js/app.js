@@ -43,7 +43,8 @@
       selectedPersonaId: '',
       error: '',
       manualOpen: false,
-      manualText: ''
+      manualText: '',
+      coverMaterialId: ''
     }
   };
 
@@ -63,6 +64,7 @@
   let productInput = null;
   let sellerInput = null;
   let infoInput = null;
+  let coverInput = null;
 
   /* ---------------- utilities ---------------- */
   function icon(name, cls) {
@@ -964,6 +966,7 @@
   }
 
   function resetImport() {
+    discardPendingImportCover();
     state.importState = {
       status: 'idle',
       dataUrl: '',
@@ -976,9 +979,53 @@
       selectedPersonaId: '',
       error: '',
       manualOpen: false,
-      manualText: ''
+      manualText: '',
+      coverMaterialId: ''
     };
     renderApp({ preserveScroll: true });
+  }
+
+  function discardPendingImportCover() {
+    const id = state.importState && state.importState.coverMaterialId;
+    const material = id && state.materials.find(function (item) { return item.id === id; });
+    if (material && material.productId === '__pending_import__') {
+      if (material.src && material.src.indexOf('blob:') === 0) URL.revokeObjectURL(material.src);
+      state.materials = state.materials.filter(function (item) { return item.id !== id; });
+    }
+  }
+
+  function handleCoverFile(file) {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+      toast('请选择一张图片作为封面', 'info');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast('封面图片不能超过 12MB', 'info');
+      return;
+    }
+    discardPendingImportCover();
+    const id = 'cover-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    const material = {
+      id: id,
+      category: 'product',
+      productId: '__pending_import__',
+      src: URL.createObjectURL(file),
+      label: labelFromFile(file.name),
+      isSample: false,
+      fileName: file.name
+    };
+    state.materials.unshift(material);
+    state.importState.coverMaterialId = id;
+    renderApp({ preserveScroll: true });
+    toast('封面已选，带入文案工坊后会设为首图', 'image');
+  }
+
+  function bindImportCover(product) {
+    const id = state.importState.coverMaterialId;
+    const material = id && state.materials.find(function (item) { return item.id === id; });
+    if (!material || !product) return;
+    material.productId = product.id;
+    state.materials = [material].concat(state.materials.filter(function (item) { return item.id !== id; }));
   }
 
   async function handleInfoFile(file) {
@@ -1011,7 +1058,8 @@
       selectedPersonaId: '',
       error: '',
       manualOpen: false,
-      manualText: ''
+      manualText: '',
+      coverMaterialId: state.importState.coverMaterialId || ''
     };
     renderApp({ preserveScroll: true });
     try {
@@ -1260,6 +1308,7 @@
       state.personaId = personaId;
       state.previewIndex = 0;
       state.seed += 1;
+      bindImportCover(analysis.product);
       selectDefaultImages(analysis.product);
       regenerate();
     } else {
@@ -1277,6 +1326,7 @@
       state.personaId = personaId;
       state.previewIndex = 0;
       state.seed += 1;
+      bindImportCover(product);
       selectDefaultImages(product);
       regenerate();
     }
@@ -1297,7 +1347,7 @@
         '</div>' +
       '</div>' +
       '<div class="import-layout ' + (imp.status === 'done' || imp.status === 'error' ? 'has-result' : '') + '">' +
-        '<div class="import-left">' + importUploadCard(imp) + manualPanel(imp) + '<div class="import-privacy">' + icon('info') + '<span>图片在当前浏览器中识别，不会上传到应用服务器；首次使用会从公共 CDN 下载 OCR 引擎和中文语言包。</span></div></div>' +
+        '<div class="import-left">' + importUploadCard(imp) + importCoverPicker(imp) + manualPanel(imp) + '<div class="import-privacy">' + icon('info') + '<span>识别图和封面图都只在当前浏览器处理，不会上传到应用服务器。</span></div></div>' +
         '<div class="import-right">' + importResultPanel(imp) + '</div>' +
       '</div>';
   }
@@ -1321,6 +1371,17 @@
           (imp.status === 'processing' ? '<div class="scan-overlay"><span class="scan-line"></span><span class="scan-label">' + (imp.stage === 'analyze' ? '匹配产品与卖点…' : imp.stage === 'segment' ? '逐段读取长图文字…' : '读取图片文字…') + '</span></div>' : '') +
         '</div>' +
         '<div class="info-preview-foot"><span class="status-dot-inline ' + (imp.status === 'error' ? 'error' : '') + '"><i></i>' + (imp.status === 'processing' ? '正在识别' : imp.status === 'error' ? '识别失败' : '识别完成') + '</span><button class="btn btn-sm" data-upload-info>' + icon('refresh') + '重新上传</button></div>' +
+      '</div>';
+  }
+
+  function importCoverPicker(imp) {
+    const material = imp.coverMaterialId && state.materials.find(function (item) { return item.id === imp.coverMaterialId; });
+    return '' +
+      '<div class="import-cover-picker">' +
+        '<div class="import-cover-copy"><strong>自己选一张好看的产品封面</strong><span>建议选主体清楚、少文字的产品实拍图；不必用这张长详情图。</span></div>' +
+        (material
+          ? '<div class="import-cover-selected"><img src="' + escapeHtml(material.src) + '" alt="封面预览"><span>' + escapeHtml(material.label) + ' · 将设为文案首图</span><button class="link-btn" data-action="clear-import-cover">更换</button></div>'
+          : '<button class="btn btn-sm" data-upload-cover>' + icon('image') + '选择封面图片</button>') +
       '</div>';
   }
 
@@ -1635,6 +1696,17 @@
       });
       document.body.appendChild(infoInput);
     }
+    if (!coverInput) {
+      coverInput = document.createElement('input');
+      coverInput.type = 'file';
+      coverInput.accept = 'image/*';
+      coverInput.style.display = 'none';
+      coverInput.addEventListener('change', function () {
+        if (coverInput.files && coverInput.files[0]) handleCoverFile(coverInput.files[0]);
+        coverInput.value = '';
+      });
+      document.body.appendChild(coverInput);
+    }
   }
 
   function triggerUpload(category) {
@@ -1647,6 +1719,11 @@
   function triggerInfoUpload() {
     ensureFileInputs();
     infoInput.click();
+  }
+
+  function triggerCoverUpload() {
+    ensureFileInputs();
+    coverInput.click();
   }
 
   /* ---------------- event delegation ---------------- */
@@ -1666,6 +1743,12 @@
       return;
     }
     if (action === 'clear-import') { resetImport(); return; }
+    if (action === 'clear-import-cover') {
+      discardPendingImportCover();
+      state.importState.coverMaterialId = '';
+      renderApp({ preserveScroll: true });
+      return;
+    }
     if (action === 'apply-import') { applyImportResult(); return; }
     if (action === 'analyze-manual') { analyzeManualText(); return; }
     if (action === 'fill-import-sample') {
@@ -1695,6 +1778,9 @@
 
     const infoUploadEl = target.closest('[data-upload-info]');
     if (infoUploadEl) { triggerInfoUpload(); return; }
+
+    const coverUploadEl = target.closest('[data-upload-cover]');
+    if (coverUploadEl) { triggerCoverUpload(); return; }
 
     const infoDropEl = target.closest('[data-info-drop]');
     if (infoDropEl) { triggerInfoUpload(); return; }

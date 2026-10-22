@@ -307,20 +307,20 @@
   }
 
   function extractCustomPoints(text) {
-    const banned = /(卖点|核心卖点|请勿|转发|群聊|聊天记录|Murmure|扫码|私信|想要的|时间|日期)/;
+    const banned = /(卖点|核心卖点|请勿|转发|群聊|聊天记录|Murmure|扫码|私信|想要的|发货地|发货|物流|快递|运费|地址|电话|客服|售后|保质期|有效期|生产日期|储存|保存|阴凉|包装方式|净含量|食品生产|执行标准|许可证|订单)/;
+    const feature = /(手工|现烤|现做|低糖|无糖|无添加|不添加|添加|选用|精选|含量|口感|香|酥|脆|软|糯|馅|芝士|肉|豆沙|扁桃仁|杏仁|坚果|颗粒|独立包装|无需解冻|空气炸锅|烤箱|分钟|冷冻|冷藏|回购|天然|真材实料|层层|新鲜|醇|清甜|回味)/;
     const raw = text.replace(/\n/g, '。').split(/[。；;!?！？]/).map(function (s) {
       return s.replace(/^[●•·*\-—\s【】\[\]（）()]+/, '').replace(/\s+/g, '').trim();
     }).filter(function (s) {
-      return s.length >= 6 && s.length <= 58 && !banned.test(s);
+      const chinese = (s.match(/[\u3400-\u9fff]/g) || []).length;
+      const latin = (s.match(/[A-Za-z]/g) || []).length;
+      return s.length >= 6 && s.length <= 58 && chinese >= 6 && latin <= 2 && !banned.test(s) && feature.test(s);
     });
     const unique = [];
     raw.forEach(function (line) {
       if (unique.indexOf(line) === -1) unique.push(line);
     });
-    const priority = unique.filter(function (line) {
-      return /(黑猪肉|馅饼|月饼|陈皮|豆沙|克|g|%|袋|片|个|盒|包装|解冻|分钟|糖|脂肪|含量|送|早餐|办公室)/.test(line);
-    });
-    return (priority.length ? priority : unique).slice(0, 5);
+    return unique.slice(0, 5);
   }
 
   function analyzeText(rawText, options) {
