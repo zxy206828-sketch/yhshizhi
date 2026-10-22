@@ -241,7 +241,7 @@
     scored.forEach(function (item) {
       if (selected.length < 5 && item.score > 0 && selected.indexOf(item.point) === -1) selected.push(item.point);
     });
-    return selected.slice(0, 5);
+    return selected.slice(0, 3);
   }
 
   function recommendScenes(product, text) {
@@ -302,52 +302,88 @@
     const labelled = lines.map(function (line) {
       return line.replace(/^(?:产品名称|商品名称|品名|产品名)\s*[：:]?\s*/, '').trim();
     }).find(function (line, index) {
-      return lines[index] !== line && line.length >= 2 && line.length <= 32 && !/(卖点|核心|价格|规格|群聊|截图)/.test(line);
+      return lines[index] !== line && line.length >= 2 && line.length <= 32 && !/[A-Za-z%$→|]/.test(line) && !/(卖点|核心|价格|规格|群聊|截图)/.test(line);
     });
     if (labelled) return labelled;
+    const productTypes = /(萨其马|沙琪玛|馅饼|月饼|糕点|蛋糕|饼干|桃酥|面包|蛋卷|酥饼|凤梨酥|蛋黄酥|肉松饼|牛轧糖|坚果|咖啡|茶叶|酸奶|燕麦|粽子|麻花|曲奇|吐司)/;
+    const ingredients = /(扁桃仁|杏仁|核桃|腰果|芝麻|花生|红豆|豆沙|梅干菜|小龙虾|陈皮|蛋黄|芝士|奶酪)/;
     const candidates = lines.map(function (line) {
       return line.replace(/^(?:产品介绍|产品信息|商品介绍|产品卖点)\s*[：:]?\s*/, '').replace(/[：:].*$/, '').trim();
-    }).filter(function (line) {
-      return line.length >= 2 && line.length <= 28 && /[\u3400-\u9fff]/.test(line) &&
-        !/(卖点|核心|口味|包装|价格|转发|群聊|截图|发货|详情|规格|配料表|产品介绍|产品信息)/.test(line);
+    }).map(function (line) {
+      const chinese = (line.match(/[\u3400-\u9fff]/g) || []).length;
+      const noise = (line.match(/[^\u3400-\u9fff0-9\s，。！？、：:（）()《》【】\-]/g) || []).length;
+      const hasType = productTypes.test(line);
+      const hasIngredient = ingredients.test(line);
+      const score = chinese * 2 + (hasType ? 10 : 0) + (hasIngredient ? 12 : 0) - noise * 5 - (line.length > 22 ? 8 : 0);
+      return { line: line, score: score, chinese: chinese, noise: noise, hasType: hasType };
+    }).filter(function (item) {
+      return item.line.length >= 2 && item.line.length <= 32 && item.chinese >= 3 && item.noise <= 1 && item.noise / Math.max(1, item.chinese + item.noise) <= 0.08 &&
+        !/(卖点|核心|口味|包装|价格|转发|群聊|截图|发货|详情|规格|配料表|产品介绍|产品信息|保质期|生产日期)/.test(item.line);
+    }).sort(function (a, b) {
+      if (a.hasType !== b.hasType) return a.hasType ? -1 : 1;
+      return b.score - a.score;
     });
-    if (candidates.length) return candidates[0];
-    return '图片识别产品';
+    return candidates.length && candidates[0].score >= 12 ? candidates[0].line : '待确认产品';
   }
 
   function extractCustomPoints(text) {
     const banned = /(卖点|核心卖点|请勿|转发|群聊|聊天记录|Murmure|扫码|私信|想要的|发货地|发货|物流|快递|运费|地址|电话|客服|售后|保质期|有效期|生产日期|储存|保存|阴凉|包装方式|净含量|食品生产|执行标准|许可证|订单)/;
-    const feature = /(手工|现烤|现做|低糖|无糖|无添加|不添加|添加|选用|精选|含量|口感|香|酥|脆|软|糯|馅|芝士|肉|豆沙|扁桃仁|杏仁|坚果|颗粒|独立包装|无需解冻|空气炸锅|烤箱|分钟|冷冻|冷藏|回购|天然|真材实料|层层|新鲜|醇|清甜|回味)/;
+    const feature = /(萨其马|沙琪玛|手工|工序|现烤|现做|低糖|无糖|无添加|不添加|添加|选用|精选|含量|口感|香|酥|脆|软|糯|芝士|奶酪|豆沙|扁桃仁|杏仁|坚果|颗粒|独立包装|无需解冻|空气炸锅|烤箱|分钟|冷冻|冷藏|天然|真材实料|新鲜|清甜|回味)/;
+    const meaningfulTerms = /(萨其马|沙琪玛|扁桃仁|杏仁|坚果|芝麻|花生|核桃|腰果|手工|工序|师傅|鲜制|现烤|现做|制作|选用|精选|低糖|无糖|无添加|含量|口感|酥|脆|软糯|独立包装|无需解冻|空气炸锅|烤箱|分钟|清甜|回味)/g;
     const raw = text.replace(/\n/g, '。').split(/[。；;!?！？，,、]/).map(function (s) {
       return s.replace(/^[●•·*\-—\s【】\[\]（）()]+/, '').replace(/\s+/g, '').trim();
     }).filter(function (s) {
       const chinese = (s.match(/[\u3400-\u9fff]/g) || []).length;
       const latin = (s.match(/[A-Za-z]/g) || []).length;
-      return s.length >= 4 && s.length <= 58 && chinese >= 4 && latin <= 2 && !banned.test(s) && feature.test(s);
+      const noise = (s.match(/[^\u3400-\u9fff0-9\s，。！？、：:（）()《》【】\-]/g) || []).length;
+      const covered = (s.match(meaningfulTerms) || []).reduce(function (total, term) { return total + term.length; }, 0);
+      return s.length >= 5 && s.length <= 48 && chinese >= 5 && latin === 0 && noise <= 1 && noise / Math.max(1, chinese + noise) <= 0.08 && covered / chinese >= 0.34 && !banned.test(s) && feature.test(s);
+    });
+    raw.sort(function (a, b) {
+      const score = function (value) {
+        const chinese = (value.match(/[\u3400-\u9fff]/g) || []).length;
+        const terms = value.match(/扁桃仁|萨其马|沙琪玛|师傅|鲜制|工序|手工|现烤|现做|杏仁|核桃|腰果|芝麻|花生|红豆|豆沙|梅干菜|陈皮|低糖|无糖|无添加|酥|脆|软糯|独立包装|无需解冻|空气炸锅|分钟|口感|香/g) || [];
+        return chinese + terms.length * 4 + (/师傅.*手工|手工.*鲜制/.test(value) ? 8 : 0) - (value.length > 42 ? 4 : 0);
+      };
+      return score(b) - score(a);
     });
     const unique = [];
+    const kinds = {};
     raw.forEach(function (line) {
-      if (unique.indexOf(line) === -1) unique.push(line);
+      if (unique.length >= 3) return;
+      const kind = /(手工|工序|鲜制|现烤|现做)/.test(line) ? 'craft'
+        : /(扁桃仁|杏仁|核桃|腰果|芝麻|花生|红豆|豆沙|梅干菜|陈皮|芝士|奶酪)/.test(line) ? 'ingredient'
+          : /(萨其马|沙琪玛|酥|脆|软糯|口感|香|清甜)/.test(line) ? 'taste'
+            : /(空气炸锅|烤箱|分钟|无需解冻|独立包装)/.test(line) ? 'use' : 'other';
+      const normalized = line.replace(/[^\u3400-\u9fff0-9]/g, '');
+      const duplicate = unique.some(function (saved) {
+        const existing = saved.replace(/[^\u3400-\u9fff0-9]/g, '');
+        return existing.indexOf(normalized) !== -1 || normalized.indexOf(existing) !== -1;
+      });
+      if (!kinds[kind] && !duplicate) {
+        kinds[kind] = true;
+        unique.push(line);
+      }
     });
-    return unique.slice(0, 5).map(polishCustomPoint);
+    return unique.map(polishCustomPoint);
   }
 
   function polishCustomPoint(source) {
     const text = String(source || '').replace(/[，,、；;。]+$/g, '').trim();
     if (/(空气炸锅|烤箱|平底锅|蒸锅|微波炉|无需解冻|分钟|加热)/.test(text)) {
-      return '吃法简单：' + text + '，照着说明加热就能享用。';
+      return '吃法：' + text + '。';
     }
     if (/(独立包装|单片包装|小包装)/.test(text)) {
       return '独立分装：' + text + '，取用更方便。';
     }
     if (/(手工|现烤|现做|制作|工艺)/.test(text)) {
-      return '制作有讲究：' + text + '。';
+      return '制作工艺：' + text + '。';
     }
     if (/(黑猪肉|猪肉|小龙虾|龙虾|虾仁|梅干菜|豆沙|陈皮|扁桃仁|杏仁|腰果|核桃|芝士|奶酪|配料|用料|含量)/.test(text)) {
-      return '用料亮点：' + text + '。';
+      return '用料：' + text + '。';
     }
     if (/(酥|脆|软|糯|绵密|鲜香|清甜|醇|多汁|爆汁|香)/.test(text)) {
-      return '口感亮点：' + text + '。';
+      return '口感：' + text + '。';
     }
     return '产品亮点：' + text + '。';
   }

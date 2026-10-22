@@ -1311,7 +1311,7 @@
         throw new Error('这张图里没有识别到足够的文字，换一张清晰一点的截图试试');
       }
       const analysis = window.DYAnalyzer.analyzeText(recognizedText);
-      if (!analysis.matched && !analysis.customPoints.length && analysis.customName === '图片识别产品') {
+      if (!analysis.matched && !analysis.customPoints.length && analysis.customName === '待确认产品') {
         state.importState.status = 'error';
         state.importState.error = '图片中的文字太小或较模糊，自动识别没有提取出产品名称和卖点。请在左侧文字框里核对并修改识别文字，或粘贴清晰的产品资料。';
         state.importState.rawText = recognizedText;
@@ -1579,6 +1579,12 @@
       toast('请先补充至少一条产品卖点', 'info');
       return;
     }
+    if (!analysis.product && analysis.customName === '待确认产品') {
+      toast('没有识别到可靠的产品名称，请在左侧资料里补上产品名后重新整理', 'info');
+      const input = document.querySelector('[data-manual-text]');
+      if (input) { input.focus(); input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      return;
+    }
     if (analysis.product) {
       state.productId = analysis.productId;
       state.pointIds = analysis.pointIds.slice();
@@ -1745,7 +1751,7 @@
     return '' +
       '<div class="analysis-panel">' +
         '<div class="analysis-top">' +
-          '<div><span class="eyebrow">PRODUCT INFO READY</span><h2>资料已识别并整理</h2><p>请快速核对产品名和卖点，然后一键生成不同人群的文案。</p></div>' +
+          '<div><span class="eyebrow">PRODUCT INFO READY</span><h2>资料已识别并整理</h2><p>' + (analysis.customName === '待确认产品' ? '产品名没有可靠识别出来，请在左侧文字框补上产品名，再重新整理。' : '已筛掉疑似乱码和重复内容，只保留最多 3 条清晰卖点。核对后即可生成不同人群的文案。') + '</p></div>' +
           '<span class="confidence-badge ' + (analysis.confidence === '高' ? 'high' : analysis.confidence === '中' ? 'mid' : 'low') + '">' + escapeHtml(analysis.confidence) + '置信度</span>' +
         '</div>' +
         '<div class="analysis-product-card"><div class="analysis-product-media"><img src="' + escapeHtml(product ? getProductImage(product) : D.placeholderImage) + '" alt=""><span>' + (product ? '已识别' : '新产品') + '</span></div><div class="analysis-product-body"><span class="eyebrow">PRODUCT</span><h3>' + escapeHtml(name || '识别到的产品') + '</h3><div class="analysis-product-meta"><strong>' + escapeHtml(analysis.price || '未识别到价格') + '</strong><span>' + escapeHtml(analysis.spec || '未识别到规格') + '</span></div></div></div>' +
