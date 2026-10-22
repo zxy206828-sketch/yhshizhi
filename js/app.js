@@ -8,6 +8,8 @@
   const STORE_CUSTOM = 'yhs.custom-products.v1';
   const STORE_PRODUCT_OVERRIDES = 'yhs.product-overrides.v1';
   const STORE_SAVED = 'yhs.saved-copies.v1';
+  const MATERIAL_DB = 'yhs-materials-v1';
+  const MATERIAL_STORE = 'uploads';
 
   const state = {
     page: 'studio',
@@ -106,6 +108,93 @@
     }
   }
 
+  function openMaterialDb() {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('当前浏览器不支持本地图片保存')); return; }
+      const request = window.indexedDB.open(MATERIAL_DB, 1);
+      request.onupgradeneeded = function () {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(MATERIAL_STORE)) db.createObjectStore(MATERIAL_STORE, { keyPath: 'id' });
+      };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error || new Error('无法打开本地图片库')); };
+    });
+  }
+
+  function storeUploadedMaterial(material, blob) {
+    return openMaterialDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction(MATERIAL_STORE, 'readwrite');
+        tx.objectStore(MATERIAL_STORE).put({
+          id: material.id,
+          category: material.category,
+          productId: material.productId || null,
+          label: material.label,
+          fileName: material.fileName,
+          isCover: material.isCover === true,
+          createdAt: material.createdAt || Date.now(),
+          blob: blob
+        });
+        tx.oncomplete = function () { db.close(); resolve(); };
+        tx.onerror = function () { db.close(); reject(tx.error || new Error('本地保存失败')); };
+        tx.onabort = function () { db.close(); reject(tx.error || new Error('本地保存失败')); };
+      });
+    });
+  }
+
+  function loadUploadedMaterials() {
+    return openMaterialDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        const request = db.transaction(MATERIAL_STORE, 'readonly').objectStore(MATERIAL_STORE).getAll();
+        request.onsuccess = function () {
+          const rows = request.result || [];
+          rows.sort(function (a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+          resolve(rows.map(function (row) {
+            return {
+              id: row.id,
+              category: row.category,
+              productId: row.productId || null,
+              label: row.label,
+              fileName: row.fileName,
+              isCover: row.isCover === true,
+              isSample: false,
+              createdAt: row.createdAt,
+              src: URL.createObjectURL(row.blob)
+            };
+          }));
+          db.close();
+        };
+        request.onerror = function () { db.close(); reject(request.error || new Error('本地图片读取失败')); };
+      });
+    });
+  }
+
+  function deleteStoredMaterial(id) {
+    return openMaterialDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction(MATERIAL_STORE, 'readwrite');
+        tx.objectStore(MATERIAL_STORE).delete(id);
+        tx.oncomplete = function () { db.close(); resolve(); };
+        tx.onerror = function () { db.close(); reject(tx.error || new Error('本地删除失败')); };
+      });
+    });
+  }
+
+  function updateStoredMaterial(id, changes) {
+    return openMaterialDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        const tx = db.transaction(MATERIAL_STORE, 'readwrite');
+        const store = tx.objectStore(MATERIAL_STORE);
+        const request = store.get(id);
+        request.onsuccess = function () {
+          if (request.result) store.put(Object.assign({}, request.result, changes));
+        };
+        tx.oncomplete = function () { db.close(); resolve(); };
+        tx.onerror = function () { db.close(); reject(tx.error || new Error('本地图片更新失败')); };
+      });
+    });
+  }
+
   function pad(n) {
     return String(n).padStart(2, '0');
   }
@@ -121,10 +210,12 @@
   }
 
   function getProductImage(product) {
-    const upload = state.materials.find(function (m) {
-      return !m.isSample && m.category === 'product' && m.productId === product.id;
+    const cover = state.materials.find(function (m) {
+      return m.isCover && m.productId === product.id;
     });
-    return upload ? upload.src : (product.image || D.placeholderImage);
+    // 普通素材只用于配图；只有识图建档时明确选择的封面才显示在产品档案。
+    if (cover) return cover.src;
+    return product.image || D.placeholderImage;
   }
 
   function getScenes(product) {
@@ -406,7 +497,7 @@
     return String(name || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 18) || '我的图片';
   }
 
-  function handleFiles(files, category) {
+  async function handleFiles(files, category) {
     const list = Array.from(files || []).filter(function (file) {
       return file && file.type && file.type.indexOf('image/') === 0;
     });
@@ -415,24 +506,32 @@
       return;
     }
     const newIds = [];
-    list.slice(0, 12).forEach(function (file, i) {
+    for (let i = 0; i < Math.min(list.length, 12); i += 1) {
+      const file = list[i];
       if (file.size > 12 * 1024 * 1024) {
         toast(file.name + ' 超过 12MB，已跳过', 'info');
-        return;
+        continue;
       }
       const id = 'upload-' + Date.now() + '-' + i + '-' + Math.random().toString(36).slice(2, 6);
       const material = {
         id: id,
         category: category,
-        productId: category === 'product' ? state.productId : null,
+        productId: null,
+        isCover: false,
         src: URL.createObjectURL(file),
         label: labelFromFile(file.name),
         isSample: false,
         fileName: file.name
       };
+      material.createdAt = Date.now();
       state.materials.push(material);
       newIds.push(id);
-    });
+      try {
+        await storeUploadedMaterial(material, file);
+      } catch (err) {
+        toast('图片已加入本次配图，但浏览器未能保存到本机；请检查浏览器存储空间', 'info');
+      }
+    }
     if (!newIds.length) return;
 
     const product = getProduct();
@@ -481,6 +580,7 @@
     if (!material) return;
     if (!window.confirm('删除这张素材？')) return;
     if (material.src && material.src.indexOf('blob:') === 0) URL.revokeObjectURL(material.src);
+    if (!material.isSample) deleteStoredMaterial(id).catch(function () {});
     state.materials = state.materials.filter(function (m) { return m.id !== id; });
     state.selectedImageIds = state.selectedImageIds.filter(function (x) { return x !== id; });
     renderApp({ preserveScroll: true });
@@ -567,7 +667,6 @@
     state.customProducts = state.customProducts.filter(function (p) { return p.id !== id; });
     refreshProducts();
     writeStore(STORE_CUSTOM, state.customProducts);
-    state.materials = state.materials.filter(function (m) { return m.productId !== id; });
     if (state.productId === id) applyProduct(D.products[0].id);
     renderApp({ preserveScroll: true });
     toast('自定义产品已删除', 'trash');
@@ -1110,12 +1209,17 @@
       id: id,
       category: 'product',
       productId: '__pending_import__',
+      isCover: true,
       src: URL.createObjectURL(file),
       label: labelFromFile(file.name),
       isSample: false,
       fileName: file.name
     };
+    material.createdAt = Date.now();
     state.materials.unshift(material);
+    storeUploadedMaterial(material, file).catch(function () {
+      toast('封面已可使用，但未能保存到本机；请检查浏览器存储空间', 'info');
+    });
     state.importState.coverMaterialId = id;
     renderApp({ preserveScroll: true });
     toast('封面已选，带入文案工坊后会设为首图', 'image');
@@ -1126,6 +1230,8 @@
     const material = id && state.materials.find(function (item) { return item.id === id; });
     if (!material || !product) return;
     material.productId = product.id;
+    material.isCover = true;
+    updateStoredMaterial(id, { productId: product.id, isCover: true }).catch(function () {});
     state.materials = [material].concat(state.materials.filter(function (item) { return item.id !== id; }));
   }
 
@@ -1735,10 +1841,10 @@
           materialTab('product', '产品图') +
           materialTab('seller', '卖家秀') +
         '</div>' +
-        '<p>点击卡片加入配图 · 上传图片仅当前会话有效</p>' +
+        '<p>点击卡片加入配图 · 上传图片保存在当前浏览器</p>' +
       '</div>' +
       '<div class="material-grid">' + (filtered.length ? filtered.map(materialCard).join('') : '<div class="material-empty">这个分类还没有素材，上传几张试试。</div>') + '</div>' +
-      '<div class="product-footnote">' + icon('info') + '示例素材为原创示意图，可直接用于预览；正式发布前建议替换成你的实拍图。上传图片不会离开本机。</div>';
+      '<div class="product-footnote">' + icon('info') + '示例素材为原创示意图，可直接用于预览；正式发布前建议替换成你的实拍图。上传图片保存在当前浏览器设备，不会同步到其他人设备；只作为配图，不会改动产品档案。</div>';
   }
 
   function materialTab(key, label) {
@@ -2160,7 +2266,7 @@
   });
 
   /* ---------------- boot ---------------- */
-  function init() {
+  async function init() {
     const custom = readStore(STORE_CUSTOM, []);
     const saved = readStore(STORE_SAVED, []);
     const overrides = readStore(STORE_PRODUCT_OVERRIDES, {});
@@ -2168,7 +2274,9 @@
     state.saved = Array.isArray(saved) ? saved.filter(function (s) { return s && s.id && s.text; }) : [];
     state.productOverrides = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
     refreshProducts();
-    state.materials = D.samples.map(function (s) { return Object.assign({}, s); });
+    let uploads = [];
+    try { uploads = await loadUploadedMaterials(); } catch (err) { /* IndexedDB 不可用时仍可使用内置素材 */ }
+    state.materials = D.samples.map(function (s) { return Object.assign({}, s); }).concat(uploads);
     ensureFileInputs();
     applyProduct(state.products[0].id);
     state.page = 'studio';

@@ -91,15 +91,11 @@
   function angleValue(ctx) {
     const lines = [];
     const lead = ctx.product.productType === 'mooncake'
-      ? '把今年这盒月饼的卖点摊开说：'
-      : '把这次的卖点摊开说：';
+      ? '这盒月饼，几个实在信息放一起：'
+      : '这款的几个实在信息，给你列清楚：';
     lines.push(lead);
     const proofList = ctx.proofs(ctx.cfg.proofCount + 1, true);
-    if (ctx.cfg.bullet) {
-      proofList.forEach(function (line) { lines.push('· ' + line); });
-    } else {
-      lines.push.apply(lines, proofList);
-    }
+    proofList.forEach(function (line) { lines.push('· ' + line); });
     if (ctx.cfg.trust) lines.push(ctx.trust);
     if (ctx.cfg.context) lines.push(ctx.context);
     lines.push(ctx.finalPitch);
@@ -109,9 +105,9 @@
   function anglePrice(ctx) {
     const lines = [];
     if (ctx.actionPrice) {
-      lines.push('这次价格说在前面：' + ctx.actionPrice);
+      lines.push('价格和规格写在这儿：' + ctx.actionPrice);
     } else {
-      lines.push('这次不聊价格，先聊味道：');
+      lines.push('先说说这款的口感和吃法：');
     }
     if (ctx.cfg.sensory) lines.push(ctx.sensory);
     lines.push.apply(lines, ctx.proofs(1));
@@ -258,7 +254,7 @@
         pick(ctx.product.hashtags, angleIndex + 2),
         pick(ctx.product.hashtags, angleIndex + 3)
       ]).slice(0, 3);
-      if (tags.length) text += '\n\n' + tags.join(' ');
+      if (tags.length) text += '\n\n' + tags.slice(0, 2).join(' ');
     }
     return text;
   }
